@@ -1,0 +1,24 @@
+# Third-party notices
+
+## TextMate grammar — OpenEdge ABL
+
+The file `syntaxes/abl.tmLanguage.json` is derived from [chriscamicas/abl-tmlanguage](https://github.com/chriscamicas/abl-tmlanguage) (MIT License). See that repository for upstream attribution and history.
+
+## ABL keyword list
+
+`resources/abl-keywords.txt` is derived from the same MIT-licensed chriscamicas/abl-tmlanguage project.
+
+## tree-sitter ABL grammar
+
+Parsing uses [eglekaz/tree-sitter-abl](https://github.com/eglekaz/tree-sitter-abl) (MIT License), via npm package `tree-sitter-abl@0.1.2`.
+
+## WebAssembly artifacts (`wasm/`)
+
+- `tree-sitter.wasm` — from [tree-sitter/tree-sitter](https://github.com/tree-sitter/tree-sitter) release **v0.24.7** (MIT License).
+- `tree-sitter-abl.wasm` — from npm package `tree-sitter-abl@0.1.2` (MIT License).
+
+Run `npm run fetch:wasm` to re-download these files if needed.
+
+## ADE corpus (tests only)
+
+Regression tests optionally use [progress/ADE](https://github.com/progress/ADE) at branch `release-12.8.x` (Apache License 2.0). The corpus is **not** shipped in the VSIX; it is checked out under `corpus/ade` locally or in CI.

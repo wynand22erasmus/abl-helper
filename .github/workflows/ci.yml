@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Pinned ADE commit (bump intentionally when refreshing corpus expectations).
+env:
+  ADE_PIN: e763891bab864adb96e90a1fdb46e336d29dc2f3
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - run: npm run grammar:build
+      - run: npm rebuild tree-sitter-abl || true
+      - run: npm run compile
+      - run: npm run check:typescript-only
+      - run: npm run lint
+      - run: npm test
+
+  corpus:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - uses: actions/checkout@v4
+        with:
+          repository: progress/ADE
+          ref: ${{ env.ADE_PIN }}
+          path: corpus/ade
+      - run: npm ci
+      - run: npm rebuild tree-sitter-abl || true
+      - run: npm run compile
+      - run: npm run test:corpus

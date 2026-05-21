@@ -1,0 +1,39 @@
+# OpenEdge ABL reserved keywords (Rsrv column set in Keyword Index).
+# Sources: docs/research-openedge-abl-reference-128.md, Progress Keyword Index 12.8.
+# Used for syntax highlighting scope keyword.control.reserved.abl.
+# Non-reserved statement keywords (IF, DO, FOR, END, RUN, CLASS, METHOD, PROCEDURE) are intentionally omitted.
+
+ACCUMULATE
+ACCUM
+AMBIGUOUS
+AMBIG
+AND
+AS
+ASSIGN
+AT
+BEGINS
+BETWEEN
+CAN-DO
+CAN-FIND
+CONTAINS
+DEF
+DEFINE
+DELETE
+DESC
+DESCENDING
+EQ
+GE
+GT
+IN
+LE
+LT
+MOD
+NE
+NOT
+OR
+TO
+UNLESS
+WHEN
+WHERE
+WHILE
+WITH

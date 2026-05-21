@@ -1,0 +1,30 @@
+# Statement / OO keywords from OpenEdge ABL Reference 12.8 research (non-exhaustive; complements chriscamicas grammar).
+# Scope: keyword.control.statement.abl
+
+ASSEMBLY
+BLOCK-LEVEL
+BUFFER-COPY
+CAST
+CLOSE
+CLOSE-QUERY
+CONNECT
+CONSTRUCTOR
+DATASET
+DESTRUCTOR
+DISCONNECT
+DYNAMIC-NEW
+EXPORT
+IMPORT
+INTERFACE
+LEAVE
+NEXT
+OPEN-QUERY
+QUIT
+RETURN
+STOP
+SUPER
+THIS-OBJECT
+THROW
+UNDO
+USING
+WEBSTREAM

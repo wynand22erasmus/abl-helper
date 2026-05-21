@@ -1,0 +1,72 @@
+{
+  "Procedure": {
+    "prefix": "procedure",
+    "body": [
+      "PROCEDURE ${1:name}:",
+      "  ${2:/* body */}",
+      "END PROCEDURE."
+    ],
+    "description": "Procedure block"
+  },
+  "Function": {
+    "prefix": "function",
+    "body": [
+      "FUNCTION ${1:name} RETURNS ${2:type}:",
+      "  ${3:/* body */}",
+      "END FUNCTION."
+    ],
+    "description": "Function block"
+  },
+  "Class": {
+    "prefix": "class",
+    "body": [
+      "CLASS ${1:Package.ClassName}:",
+      "  ${2:/* members */}",
+      "END CLASS."
+    ],
+    "description": "Class definition (.cls)"
+  },
+  "Method": {
+    "prefix": "method",
+    "body": [
+      "METHOD ${1|PUBLIC,PRIVATE,PROTECTED|} ${2:name} (${3:params}):",
+      "  ${4:/* body */}",
+      "END METHOD."
+    ],
+    "description": "Method implementation"
+  },
+  "Define variable": {
+    "prefix": "defvar",
+    "body": [
+      "DEFINE VARIABLE ${1:name} AS ${2:type} NO-UNDO${3: INITIAL ${4:value}}."
+    ],
+    "description": "DEFINE VARIABLE"
+  },
+  "For each": {
+    "prefix": "foreach",
+    "body": [
+      "FOR EACH ${1:buffer} NO-LOCK:",
+      "  ${2:/* body */}",
+      "END."
+    ],
+    "description": "FOR EACH loop"
+  },
+  "If then": {
+    "prefix": "if",
+    "body": [
+      "IF ${1:condition} THEN",
+      "  ${2:/* statement */}."
+    ],
+    "description": "IF THEN"
+  },
+  "Run": {
+    "prefix": "run",
+    "body": ["RUN ${1:program.p}."],
+    "description": "RUN statement"
+  },
+  "Include": {
+    "prefix": "include",
+    "body": ["{${1:file.i}}"],
+    "description": "Include file reference"
+  }
+}

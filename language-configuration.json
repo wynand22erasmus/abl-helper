@@ -1,0 +1,36 @@
+{
+  "comments": {
+    "lineComment": "//",
+    "blockComment": ["/*", "*/"]
+  },
+  "brackets": [
+    ["{", "}"],
+    ["[", "]"],
+    ["(", ")"]
+  ],
+  "autoClosingPairs": [
+    { "open": "{", "close": "}" },
+    { "open": "[", "close": "]" },
+    { "open": "(", "close": ")" },
+    { "open": "\"", "close": "\"", "notIn": ["string"] },
+    { "open": "'", "close": "'", "notIn": ["string", "comment"] }
+  ],
+  "surroundingPairs": [
+    ["{", "}"],
+    ["[", "]"],
+    ["(", ")"],
+    ["\"", "\""],
+    ["'", "'"]
+  ],
+  "folding": {
+    "markers": {
+      "start": "^\\s*//\\s*#?region\\b",
+      "end": "^\\s*//\\s*#?endregion\\b"
+    }
+  },
+  "wordPattern": "(-?\\d*\\.\\d\\w*)|([^\\`\\@\\~\\!\\%\\^\\&\\*\\(\\)\\-\\=\\+\\[\\{\\]\\}\\\\\\|\\;\\:\\'\\\"\\,\\.\\<\\>/\\?\\s]+)",
+  "indentationRules": {
+    "increaseIndentPattern": "(?i)^\\s*(PROCEDURE|FUNCTION|METHOD|CLASS|CASE|REPEAT|FOR|DO|IF|ELSE|TRIGGER|CONSTRUCTOR|DESTRUCTOR)\\b.*$",
+    "decreaseIndentPattern": "(?i)^\\s*(END|END\\s+PROCEDURE|END\\s+FUNCTION|END\\s+METHOD|END\\s+CLASS|END\\s+CASE|END\\s+TRIGGER)\\b.*$"
+  }
+}

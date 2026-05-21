@@ -1,0 +1,206 @@
+{
+  "name": "abl-helper",
+  "displayName": "ABL Helper",
+  "description": "OpenEdge ABL syntax highlighting, outline, formatting, and syntax checking for VS Code.",
+  "version": "0.1.0",
+  "publisher": "abl-helper",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Formatters",
+    "Linters"
+  ],
+  "activationEvents": [
+    "onLanguage:abl"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "abl",
+        "aliases": [
+          "OpenEdge ABL",
+          "ABL",
+          "Progress"
+        ],
+        "extensions": [
+          ".p",
+          ".cls",
+          ".w",
+          ".i"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "snippets": [
+      {
+        "language": "abl",
+        "path": "./snippets/abl.code-snippets"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "abl",
+        "scopeName": "source.abl",
+        "path": "./syntaxes/abl.tmLanguage.json"
+      },
+      {
+        "scopeName": "abl-helper.research.injection",
+        "path": "./syntaxes/research-injection.tmLanguage.json",
+        "injectTo": [
+          "source.abl"
+        ]
+      }
+    ],
+    "commands": [
+      {
+        "command": "ablHelper.checkSyntax",
+        "title": "ABL Helper: Check Syntax"
+      },
+      {
+        "command": "ablHelper.formatKeywordsUpper",
+        "title": "ABL Helper: Format Keywords (Upper Case)"
+      },
+      {
+        "command": "ablHelper.formatKeywordsLower",
+        "title": "ABL Helper: Format Keywords (Lower Case)"
+      },
+      {
+        "command": "ablHelper.formatTrimRight",
+        "title": "ABL Helper: Trim Trailing Whitespace"
+      },
+      {
+        "command": "ablHelper.showOutput",
+        "title": "ABL Helper: Show Output"
+      },
+      {
+        "command": "ablHelper.restartParser",
+        "title": "ABL Helper: Reload Tree-sitter Parser"
+      }
+    ],
+    "configuration": {
+      "title": "ABL Helper",
+      "properties": {
+        "ablHelper.dlcPath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to OpenEdge installation (DLC). If empty, the DLC environment variable is used."
+        },
+        "ablHelper.propath": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "description": "PROPATH entries (in order). Workspace folder is appended when empty."
+        },
+        "ablHelper.parameterFiles": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "description": "Parameter files (-pf) passed to the OpenEdge session."
+        },
+        "ablHelper.workingDirectory": {
+          "type": "string",
+          "default": "${workspaceFolder}",
+          "description": "Working directory for OpenEdge subprocesses."
+        },
+        "ablHelper.checkSyntaxExtraArgs": {
+          "type": "string",
+          "default": "",
+          "description": "Extra arguments appended to the check-syntax invocation (advanced)."
+        },
+        "ablHelper.batchExecutable": {
+          "type": "string",
+          "default": "_progres",
+          "description": "Batch OpenEdge executable name (typically _progres on Windows/Unix)."
+        },
+        "ablHelper.format.keywordCaseOnFormatDocument": {
+          "type": "string",
+          "enum": [
+            "none",
+            "upper",
+            "lower"
+          ],
+          "default": "none",
+          "description": "When using Format Document, adjust ABL keyword casing (Tier A)."
+        },
+        "ablHelper.format.trimTrailingWhitespace": {
+          "type": "boolean",
+          "default": true,
+          "description": "Trim trailing whitespace on Format Document (Tier A)."
+        },
+        "ablHelper.format.enableTreeSitterPass": {
+          "type": "boolean",
+          "default": false,
+          "description": "Experimental: run minimal tree-sitter-based formatting (Tier B). Off by default."
+        },
+        "ablHelper.outline.debounceMs": {
+          "type": "number",
+          "default": 200,
+          "minimum": 0,
+          "description": "Debounce in milliseconds before re-parsing for outline updates."
+        },
+        "ablHelper.corpus.adeRoot": {
+          "type": "string",
+          "default": "",
+          "description": "Path to checked-out progress/ADE (release-12.8.x). If empty, tests use ADE_ROOT env or corpus/ade."
+        },
+        "ablHelper.corpus.maxFileBytes": {
+          "type": "number",
+          "default": 1048576,
+          "minimum": 4096,
+          "description": "Skip corpus files larger than this many bytes."
+        },
+        "ablHelper.corpus.sampleSize": {
+          "type": "number",
+          "default": 400,
+          "minimum": 1,
+          "description": "Deterministic sample size for ADE corpus smoke tests."
+        }
+      }
+    },
+    "configurationDefaults": {
+      "[abl]": {
+        "editor.formatOnSave": false
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "node esbuild.config.mjs",
+    "watch": "node esbuild.config.mjs --watch",
+    "lint": "eslint src && npm run check:typescript-only",
+    "check:typescript-only": "node scripts/check-typescript-only.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:corpus": "vitest run src/test/corpus.test.ts",
+    "fetch:wasm": "node scripts/fetch-wasm.mjs",
+    "corpus:sync": "node scripts/sync-ade-corpus.mjs",
+    "grammar:build": "node scripts/build-syntax-from-research.mjs",
+    "package": "vsce package --no-dependencies --allow-missing-repository"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.15.0",
+    "@types/node": "^20.14.0",
+    "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "^3.2.0",
+    "esbuild": "^0.24.0",
+    "eslint": "^9.15.0",
+    "typescript": "^5.6.3",
+    "typescript-eslint": "^8.14.0",
+    "vitest": "^2.1.5",
+    "vscode-textmate": "^9.0.0",
+    "vscode-oniguruma": "^2.0.0"
+  },
+  "dependencies": {
+    "tree-sitter": "^0.21.1",
+    "tree-sitter-abl": "^0.1.2",
+    "web-tree-sitter": "^0.24.7"
+  }
+}

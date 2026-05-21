@@ -1,0 +1,14 @@
+---
+description: Extension source under src/ must be TypeScript only
+globs: src/**/*
+alwaysApply: false
+---
+
+# TypeScript-only extension source
+
+All extension logic under `src/` must be **TypeScript** (`.ts`). Do not add JavaScript source files (`.js`, `.jsx`) under `src/`.
+
+- **Allowed:** root/tooling `.mjs` (e.g. `esbuild.config.mjs`, `eslint.config.mjs`, `scripts/*.mjs`), compiled output in `out/`, and other non-`src` assets.
+- **Enforced by:** `tsconfig.json` (`allowJs: false`), ESLint override for `src/**/*.{js,jsx}`, `npm run check:typescript-only`, and CI.
+
+When adding new extension code, use `.ts` and match existing module/style conventions in the repo.
