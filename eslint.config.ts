@@ -1,3 +1,4 @@
+/** ESLint flat config: TypeScript in src/ and scripts/; no hand-written JS under those trees. */
 import eslint from "@eslint/js";
 import tseslint from "typescript-eslint";
 

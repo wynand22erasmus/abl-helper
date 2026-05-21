@@ -7,6 +7,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import * as https from "node:https";
 
+/** Follow redirects; used for tree-sitter release assets and unpkg grammar WASM. */
 function download(url: string, dest: string): Promise<void> {
   return new Promise((resolve, reject) => {
     const file = fs.createWriteStream(dest);

@@ -20,6 +20,7 @@ function loadWordList(relPath: string): string[] {
     .filter((l) => l && !l.startsWith("#"));
 }
 
+/** Build regex alternation; long keywords get optional abbreviated stems for TextMate matching. */
 function keywordAlternation(words: string[], abbreviate = true): string {
   const parts: string[] = [];
   for (const w of words) {

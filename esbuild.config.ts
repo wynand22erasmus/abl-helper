@@ -1,3 +1,7 @@
+/**
+ * Bundle extension entry to CommonJS for Node (VS Code extension host).
+ * tree-sitter native modules and vscode are external; WASM is loaded at runtime from wasm/.
+ */
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as esbuild from "esbuild";
@@ -37,6 +41,7 @@ const ctx = await esbuild.context({
   target: "node18",
   format: "cjs",
   sourcemap: true,
+  // vscode: provided by host; tree-sitter*: optional native path, not bundled
   external: ["vscode", "tree-sitter", "tree-sitter-abl"],
   logLevel: "info",
   plugins: [copyAssetsPlugin],

@@ -1,11 +1,15 @@
+/**
+ * ABL completion: merges tree-sitter document symbols (when parser available)
+ * with static keyword list; dedupes by label, symbols sort after keywords.
+ */
 import * as vscode from "vscode";
 import type { SyntaxNode } from "web-tree-sitter";
 import { keywordCompletionItems } from "./keywords";
 import { extractDocumentSymbols } from "./symbols";
 
-const MAX_KEYWORD_ITEMS = 80;
 const MAX_SYMBOL_ITEMS = 40;
 
+/** Identifier under cursor (ABL allows hyphens in names); empty word if none. */
 export function wordAtPosition(
   doc: vscode.TextDocument,
   position: vscode.Position,
@@ -83,6 +87,7 @@ function flattenSymbols(
   }
 }
 
+/** Build merged keyword + in-document symbol completions for the given position. */
 export function buildCompletionList(
   doc: vscode.TextDocument,
   position: vscode.Position,
@@ -90,7 +95,7 @@ export function buildCompletionList(
   root: SyntaxNode | null,
 ): vscode.CompletionItem[] {
   const { word, range } = wordAtPosition(doc, position);
-  const keywordItems = keywordCompletionItems(word, extensionRoot, range).slice(0, MAX_KEYWORD_ITEMS);
+  const keywordItems = keywordCompletionItems(word, extensionRoot, range);
 
   const symbolItems: vscode.CompletionItem[] = [];
   if (root) {

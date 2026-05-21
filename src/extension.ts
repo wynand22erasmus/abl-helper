@@ -1,3 +1,7 @@
+/**
+ * VS Code extension entry: registers ABL language providers and commands.
+ * Parser (native tree-sitter or WASM fallback) is created lazily on first use.
+ */
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as vscode from "vscode";
@@ -6,19 +10,33 @@ import { extractDocumentSymbols } from "./symbols";
 import { runCheckSyntax, type CheckSyntaxOptions } from "./checkSyntax";
 import { buildCompletionList } from "./completion";
 import { applyKeywordCase, applyTierBFormatting, trimTrailingWhitespace, type KeywordCase } from "./formatters/tierA";
-import type { SyntaxNode } from "web-tree-sitter";
+import { requireAblEditor, replaceEntireDocument, withParseTree } from "./parseUtil";
 
 const ABL: vscode.DocumentSelector = { language: "abl" };
+
+const VALID_KEYWORD_CASE = new Set<KeywordCase>(["none", "upper", "lower"]);
 
 let parserHandle: AblParserHandle | undefined;
 let diagCollection: vscode.DiagnosticCollection | undefined;
 let output: vscode.OutputChannel | undefined;
+let warnedOutlineParserNone = false;
+let warnedTierBSkipped = false;
+
+const outlinePending = new Map<
+  string,
+  { timer: ReturnType<typeof setTimeout>; resolvers: Array<(symbols: vscode.DocumentSymbol[]) => void> }
+>();
 
 function getOutput(): vscode.OutputChannel {
   if (!output) {
     output = vscode.window.createOutputChannel("ABL Helper");
   }
   return output;
+}
+
+function readKeywordCase(cfg: vscode.WorkspaceConfiguration): KeywordCase {
+  const raw = cfg.get<string>("format.keywordCaseOnFormatDocument") ?? "none";
+  return VALID_KEYWORD_CASE.has(raw as KeywordCase) ? (raw as KeywordCase) : "none";
 }
 
 function readCheckOptions(): CheckSyntaxOptions {
@@ -30,9 +48,16 @@ function readCheckOptions(): CheckSyntaxOptions {
     parameterFiles: c.get<string[]>("parameterFiles", []) ?? [],
     batchExecutable: c.get<string>("batchExecutable", "_progres") ?? "_progres",
     extraArgs: c.get<string>("checkSyntaxExtraArgs", "") ?? "",
+    verboseListing: c.get<boolean>("checkSyntax.verboseListing", false) ?? false,
   };
 }
 
+function formatCommandError(e: unknown): string {
+  const msg = e instanceof Error ? e.message : String(e);
+  return msg.startsWith("ABL Helper:") ? msg : `ABL Helper: ${msg}`;
+}
+
+/** Packaged extension uses resources/; dev builds copy assets to out/resources/ via esbuild. */
 function runnerScriptPath(context: vscode.ExtensionContext): string {
   const dev = path.join(context.extensionPath, "out", "resources", "check-syntax.p");
   if (fs.existsSync(dev)) {
@@ -49,6 +74,60 @@ async function ensureParser(context: vscode.ExtensionContext): Promise<AblParser
   return parserHandle;
 }
 
+async function computeDocumentSymbols(
+  context: vscode.ExtensionContext,
+  doc: vscode.TextDocument,
+): Promise<vscode.DocumentSymbol[]> {
+  const handle = await ensureParser(context);
+  if (handle.mode === "none") {
+    if (!warnedOutlineParserNone) {
+      warnedOutlineParserNone = true;
+      void vscode.window.showWarningMessage(
+        "ABL Helper: Outline unavailable (tree-sitter parser missing — run npm run fetch:wasm).",
+      );
+    }
+    return [];
+  }
+  const symbols = await withParseTree(handle, doc.getText(), (root) => extractDocumentSymbols(doc, root));
+  return symbols ?? [];
+}
+
+function debouncedDocumentSymbols(
+  context: vscode.ExtensionContext,
+  doc: vscode.TextDocument,
+  debounceMs: number,
+): Promise<vscode.DocumentSymbol[]> {
+  if (debounceMs <= 0) {
+    return computeDocumentSymbols(context, doc);
+  }
+  const key = doc.uri.toString();
+  return new Promise((resolve) => {
+    let state = outlinePending.get(key);
+    if (!state) {
+      state = { timer: undefined as unknown as ReturnType<typeof setTimeout>, resolvers: [] };
+      outlinePending.set(key, state);
+    }
+    state.resolvers.push(resolve);
+    if (state.timer) {
+      clearTimeout(state.timer);
+    }
+    state.timer = setTimeout(() => {
+      const pending = outlinePending.get(key);
+      outlinePending.delete(key);
+      if (!pending) {
+        resolve([]);
+        return;
+      }
+      void computeDocumentSymbols(context, doc).then((symbols) => {
+        for (const r of pending.resolvers) {
+          r(symbols);
+        }
+      });
+    }, debounceMs);
+  });
+}
+
+/** Wire diagnostics, check-syntax, formatting commands, symbols, completion, and document format. */
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
   const log = (s: string) => getOutput().appendLine(s);
   log("ABL Helper activated.");
@@ -63,64 +142,107 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   );
 
   context.subscriptions.push(
-    vscode.commands.registerCommand("ablHelper.restartParser", async () => {
-      resetWasmParserInitForTests();
-      parserHandle?.dispose();
-      parserHandle = undefined;
-      await ensureParser(context);
-      vscode.window.showInformationMessage("ABL Helper: parser reloaded.");
+    vscode.commands.registerCommand("ablHelper.restartParser", () => {
+      void (async () => {
+        try {
+          resetWasmParserInitForTests();
+          parserHandle?.dispose();
+          parserHandle = undefined;
+          warnedOutlineParserNone = false;
+          warnedTierBSkipped = false;
+          const handle = await ensureParser(context);
+          if (handle.mode === "none") {
+            vscode.window.showWarningMessage(
+              "ABL Helper: Parser still unavailable (run npm run fetch:wasm in the extension folder).",
+            );
+          } else {
+            vscode.window.showInformationMessage("ABL Helper: parser reloaded.");
+          }
+        } catch (e) {
+          const msg = formatCommandError(e);
+          vscode.window.showErrorMessage(msg);
+          log(msg);
+        }
+      })();
     }),
   );
 
   context.subscriptions.push(
-    vscode.commands.registerCommand("ablHelper.checkSyntax", async () => {
-      const editor = vscode.window.activeTextEditor;
-      if (!editor || editor.document.languageId !== "abl") {
-        vscode.window.showWarningMessage("Open an ABL file first.");
-        return;
-      }
-      const doc = editor.document;
-      try {
-        const opts = readCheckOptions();
-        const runner = runnerScriptPath(context);
-        const diags = runCheckSyntax(doc, opts, runner, log);
-        diagCollection!.set(doc.uri, diags);
-        vscode.window.showInformationMessage(
-          diags.length ? `Check syntax: ${diags.length} issue(s).` : "Check syntax: no issues reported.",
-        );
-      } catch (e) {
-        const msg = e instanceof Error ? e.message : String(e);
-        vscode.window.showErrorMessage(msg);
-        log(msg);
-      }
+    vscode.commands.registerCommand("ablHelper.checkSyntax", () => {
+      void (async () => {
+        const editor = requireAblEditor();
+        if (!editor) {
+          return;
+        }
+        const doc = editor.document;
+        try {
+          const opts = readCheckOptions();
+          const runner = runnerScriptPath(context);
+          const result = runCheckSyntax(doc, opts, runner, log);
+          diagCollection!.set(doc.uri, result.diagnostics);
+          if (result.status === "ok" && result.diagnostics.length === 0) {
+            vscode.window.showInformationMessage("ABL Helper: Check syntax — no issues reported.");
+          } else if (result.diagnostics.length > 0) {
+            vscode.window.showInformationMessage(
+              `ABL Helper: Check syntax — ${result.diagnostics.length} issue(s).`,
+            );
+          } else {
+            const msg =
+              result.errorMessage ??
+              `ABL Helper: Check syntax failed (${result.status.replace(/_/g, " ")}).`;
+            vscode.window.showErrorMessage(msg);
+            log(msg);
+          }
+        } catch (e) {
+          diagCollection!.set(doc.uri, []);
+          const msg = formatCommandError(e);
+          vscode.window.showErrorMessage(msg);
+          log(msg);
+        }
+      })();
     }),
   );
 
   const runFormat = async (kc: KeywordCase) => {
-    const editor = vscode.window.activeTextEditor;
-    if (!editor || editor.document.languageId !== "abl") {
+    const editor = requireAblEditor();
+    if (!editor) {
       return;
     }
     const text = editor.document.getText();
     const next = applyKeywordCase(trimTrailingWhitespace(text), kc, context.extensionPath);
-    const endLine = editor.document.lineCount - 1;
-    const endChar = editor.document.lineAt(endLine).text.length;
-    await editor.edit((eb) => eb.replace(new vscode.Range(0, 0, endLine, endChar), next));
+    await replaceEntireDocument(editor, next);
   };
 
   context.subscriptions.push(
-    vscode.commands.registerCommand("ablHelper.formatKeywordsUpper", () => runFormat("upper")),
-    vscode.commands.registerCommand("ablHelper.formatKeywordsLower", () => runFormat("lower")),
-    vscode.commands.registerCommand("ablHelper.formatTrimRight", async () => {
-      const editor = vscode.window.activeTextEditor;
-      if (!editor || editor.document.languageId !== "abl") {
-        return;
-      }
-      const text = editor.document.getText();
-      const next = trimTrailingWhitespace(text);
-      const endLine = editor.document.lineCount - 1;
-      const endChar = editor.document.lineAt(endLine).text.length;
-      await editor.edit((eb) => eb.replace(new vscode.Range(0, 0, endLine, endChar), next));
+    vscode.commands.registerCommand("ablHelper.formatKeywordsUpper", () => {
+      void runFormat("upper").catch((e) => {
+        const msg = formatCommandError(e);
+        vscode.window.showErrorMessage(msg);
+        log(msg);
+      });
+    }),
+    vscode.commands.registerCommand("ablHelper.formatKeywordsLower", () => {
+      void runFormat("lower").catch((e) => {
+        const msg = formatCommandError(e);
+        vscode.window.showErrorMessage(msg);
+        log(msg);
+      });
+    }),
+    vscode.commands.registerCommand("ablHelper.formatTrimRight", () => {
+      void (async () => {
+        const editor = requireAblEditor();
+        if (!editor) {
+          return;
+        }
+        try {
+          const next = trimTrailingWhitespace(editor.document.getText());
+          await replaceEntireDocument(editor, next);
+        } catch (e) {
+          const msg = formatCommandError(e);
+          vscode.window.showErrorMessage(msg);
+          log(msg);
+        }
+      })();
     }),
   );
 
@@ -129,21 +251,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       if (doc.languageId !== "abl") {
         return [];
       }
-      const handle = await ensureParser(context);
-      if (handle.mode === "none") {
-        return [];
-      }
-      const tree = handle.parse(doc.getText());
-      try {
-        const root = tree.rootNode as import("web-tree-sitter").SyntaxNode;
-        return extractDocumentSymbols(doc, root);
-      } finally {
-        try {
-          tree.delete();
-        } catch {
-          /* ignore */
-        }
-      }
+      const debounceMs = vscode.workspace.getConfiguration("ablHelper").get<number>("outline.debounceMs", 200) ?? 200;
+      return debouncedDocumentSymbols(context, doc, debounceMs);
     },
   };
 
@@ -158,22 +267,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             return [];
           }
           const handle = await ensureParser(context);
-          let root: SyntaxNode | null = null;
-          if (handle.mode !== "none") {
-            const tree = handle.parse(doc.getText());
-            try {
-              root = tree.rootNode as SyntaxNode;
-            } finally {
-              try {
-                tree.delete();
-              } catch {
-                /* ignore */
-              }
-            }
-          }
-          return buildCompletionList(doc, position, context.extensionPath, root);
+          const root = await withParseTree(handle, doc.getText(), (r) => r);
+          return buildCompletionList(doc, position, context.extensionPath, root ?? null);
         },
       },
+      // Re-invoke on identifier chars so keyword/symbol prefix filtering stays in sync while typing.
       ..."abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-".split(""),
     ),
   );
@@ -182,7 +280,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     vscode.languages.registerDocumentFormattingEditProvider(ABL, {
       provideDocumentFormattingEdits: async (doc) => {
         const cfg = vscode.workspace.getConfiguration("ablHelper");
-        const kc = (cfg.get<string>("format.keywordCaseOnFormatDocument") ?? "none") as KeywordCase;
+        const kc = readKeywordCase(cfg);
         const trim = cfg.get<boolean>("format.trimTrailingWhitespace", true);
         const tierB = cfg.get<boolean>("format.enableTreeSitterPass", false);
         let text = doc.getText();
@@ -192,18 +290,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         text = applyKeywordCase(text, kc, context.extensionPath);
         if (tierB) {
           const handle = await ensureParser(context);
-          if (handle.mode !== "none") {
-            const tree = handle.parse(text);
-            try {
-              const root = tree.rootNode as import("web-tree-sitter").SyntaxNode;
-              text = applyTierBFormatting(text, root);
-            } finally {
-              try {
-                tree.delete();
-              } catch {
-                /* ignore */
-              }
-            }
+          const formatted = await withParseTree(handle, text, (root) => applyTierBFormatting(text, root));
+          if (formatted !== undefined) {
+            text = formatted;
+          } else if (!warnedTierBSkipped) {
+            warnedTierBSkipped = true;
+            void vscode.window.showWarningMessage(
+              "ABL Helper: Tier B formatting skipped (tree-sitter parser unavailable).",
+            );
           }
         }
         const last = doc.lineCount - 1;
@@ -215,6 +309,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
   context.subscriptions.push({
     dispose() {
+      for (const state of outlinePending.values()) {
+        clearTimeout(state.timer);
+      }
+      outlinePending.clear();
       parserHandle?.dispose();
       parserHandle = undefined;
     },
@@ -222,6 +320,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 }
 
 export function deactivate(): void {
+  for (const state of outlinePending.values()) {
+    clearTimeout(state.timer);
+  }
+  outlinePending.clear();
   parserHandle?.dispose();
   parserHandle = undefined;
 }

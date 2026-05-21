@@ -1,9 +1,16 @@
+/**
+ * Tree-sitter ABL parser with a three-tier fallback:
+ * 1) node-tree-sitter + tree-sitter-abl (fastest, requires native build),
+ * 2) web-tree-sitter + bundled WASM under extension wasm/,
+ * 3) mode "none" when WASM is missing (symbols/completion degrade gracefully).
+ */
 import * as fs from "node:fs";
 import * as path from "node:path";
 import type Parser from "web-tree-sitter";
 
 export type AblParserMode = "native" | "wasm" | "none";
 
+/** Active parser instance; callers must delete() trees and dispose() WASM parsers when done. */
 export interface AblParserHandle {
   mode: AblParserMode;
   parse(source: string): Parser.Tree;
@@ -12,6 +19,7 @@ export interface AblParserHandle {
 
 let wasmInitPromise: Promise<void> | undefined;
 
+/** Prefer native bindings when available (e.g. dev machines with compiled tree-sitter-abl). */
 function tryNativeParser(): AblParserHandle | undefined {
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -34,6 +42,7 @@ function tryNativeParser(): AblParserHandle | undefined {
   }
 }
 
+/** Create the best available parser for this host; WASM init is shared across calls. */
 export async function createAblParser(extensionRoot: string): Promise<AblParserHandle> {
   const native = tryNativeParser();
   if (native) {
@@ -81,6 +90,7 @@ export async function createAblParser(extensionRoot: string): Promise<AblParserH
   };
 }
 
+/** Clear one-shot WASM init so tests can re-bind locateFile / language paths. */
 export function resetWasmParserInitForTests(): void {
   wasmInitPromise = undefined;
 }

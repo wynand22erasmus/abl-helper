@@ -4,9 +4,36 @@ import * as fs from "node:fs";
 import { buildAdeInventory, resolveAdeRoot } from "../corpus/inventory";
 import { createAblParser, resetWasmParserInitForTests } from "../ablParser";
 
+/** Defaults aligned with package.json ablHelper.corpus.* settings. */
+const DEFAULT_CORPUS_MAX_FILE_BYTES = 1048576;
+const DEFAULT_CORPUS_SAMPLE_SIZE = 400;
+
+function corpusMaxFileBytes(): number {
+  const env = process.env.ABL_CORPUS_MAX_FILE_BYTES?.trim();
+  if (env) {
+    const n = Number(env);
+    if (Number.isFinite(n) && n > 0) {
+      return n;
+    }
+  }
+  return DEFAULT_CORPUS_MAX_FILE_BYTES;
+}
+
+function corpusSampleSize(): number {
+  const env = process.env.ABL_CORPUS_SAMPLE_SIZE?.trim();
+  if (env) {
+    const n = Number(env);
+    if (Number.isFinite(n) && n > 0) {
+      return n;
+    }
+  }
+  return DEFAULT_CORPUS_SAMPLE_SIZE;
+}
+
 describe("ADE corpus smoke", () => {
   const root = path.resolve(__dirname, "..", "..");
-  const ade = resolveAdeRoot("");
+  const adeRootConfig = process.env.ABL_CORPUS_ADE_ROOT?.trim() ?? "";
+  const ade = resolveAdeRoot(adeRootConfig);
 
   beforeAll(() => {
     resetWasmParserInitForTests();
@@ -21,7 +48,7 @@ describe("ADE corpus smoke", () => {
       expect(true).toBe(true);
       return;
     }
-    const files = buildAdeInventory(ade, 512 * 1024, 50);
+    const files = buildAdeInventory(ade, corpusMaxFileBytes(), corpusSampleSize());
     expect(files.length).toBeGreaterThan(0);
     const parser = await createAblParser(root);
     if (parser.mode === "none") {

@@ -51,6 +51,8 @@ You can install **ABL Helper** alongside [Riverside OpenEdge ABL LSP](https://ma
 
 This extension does **not** provide a full language server, debugger, or compile/deploy pipeline — it focuses on lightweight highlighting, outline, Tier A/B formatting, and a simple check-syntax path.
 
+For a full implemented vs planned feature inventory, see **[docs/FEATURES.md](docs/FEATURES.md)**.
+
 ## Feature checklist
 
 Legend: **Done** = available in v0.1.x · **Planned** = on the roadmap below · **Out of scope** = intentionally deferred (use Riverside LSP, ZExt, CABL, etc.)
@@ -115,10 +117,10 @@ Legend: **Done** = available in v0.1.x · **Planned** = on the roadmap below · 
 
 | Status | Feature |
 |--------|---------|
-| Done | TypeScript-only source enforcement (`src/`, `scripts/`; ESLint + CI) |
-| Done | Unit tests — symbols, check-syntax parser, grammar scopes |
+| Done | TypeScript-only repo — `src/`, `scripts/`, root tooling configs; ESLint + `check:typescript-only` + CI |
+| Done | Unit tests — symbols, completion, check-syntax parser, grammar scopes |
 | Done | ADE corpus smoke tests (`npm run test:corpus`, CI job) |
-| Done | GitHub Actions — compile, lint, test, package VSIX |
+| Done | GitHub Actions — build, typecheck, lint, test (corpus job on pinned ADE) |
 | Planned | Publish to VS Code Marketplace |
 | Planned | Broader ADE corpus assertions (formatter idempotence on allowlist) |
 
@@ -128,13 +130,15 @@ Phased work after v0.1.0. Order may shift; **Out of scope** items stay external 
 
 ```mermaid
 flowchart LR
-  v01[v0.1 Shipped]
+  v01[v0.1 Core]
+  v02[v0.2 Autocomplete and snippets]
   p2[Phase 2 Intelligence]
   p3[Phase 3 Project and OE]
   p4[Phase 4 Format and Lint]
   p5[Phase 5 Ship]
 
-  v01 --> p2
+  v01 --> v02
+  v02 --> p2
   p2 --> p3
   p3 --> p4
   p4 --> p5
@@ -143,10 +147,10 @@ flowchart LR
 ### Phase 2 — Language intelligence
 
 - ~~Autocomplete: keywords + in-file symbols~~ (v0.2)
+- ~~Code snippets for common ABL patterns~~ (v0.2)
 - Autocomplete: database tables/fields (dictionary / `.df` — when configured)
 - Go to definition for includes and local symbols
 - Hover for tables/fields where schema is available
-- Code snippets for common ABL patterns
 
 ### Phase 3 — Project model and OpenEdge workflows
 
@@ -179,9 +183,11 @@ flowchart LR
 |------|---------|
 | Install dependencies | `npm ci` |
 | Full build (grammar + extension) | `npm run build` |
+| Regenerate research injection grammar only | `npm run grammar:build` |
 | Compile TypeScript only | `npm run compile` |
 | Watch while editing | `npm run watch` |
-| Type-check without emit | `npm run typecheck` |
+| Type-check (`src` + tooling configs) | `npm run typecheck` |
+| Lint (ESLint + TypeScript-only guard) | `npm run lint` |
 | Package installable `.vsix` | `npm run package` |
 | Run tests | `npm test` |
 
@@ -197,15 +203,16 @@ Native `tree-sitter-abl` is optional for development; the extension falls back t
 
 ## Development
 
-Extension source under `src/` and repo scripts under `scripts/` are **TypeScript only** (`.ts`). Do not add `.js`, `.jsx`, or `.mjs` there. Root tooling (`esbuild.config.ts`, `eslint.config.ts`, `scripts/*.ts`) runs via [tsx](https://github.com/privatenumber/tsx) without a separate compile step. Bundled extension output lives in `out/` (gitignored; `out/extension.js` from esbuild).
+Maintained source in this repository is **TypeScript only** (`.ts`): extension code in `src/`, automation in `scripts/`, and root configs (`esbuild.config.ts`, `eslint.config.ts`, `vitest.config.ts`). Do not add hand-written `.js`, `.jsx`, or `.mjs` under `src/` or `scripts/`. Tooling runs via [tsx](https://github.com/privatenumber/tsx) without a separate compile step. Bundled extension output lives in `out/` (gitignored; `out/extension.js` from esbuild).
 
 ```bash
 npm ci
 npm run build
 npm run package   # refresh abl-helper-dev.vsix before committing extension changes
 npm test
-npm run typecheck              # src + tooling (tsconfig.json + tsconfig.tools.json)
-npm run check:typescript-only  # CI guard: no .js/.jsx/.mjs under src/ or scripts/
+npm run lint                   # eslint . + check:typescript-only
+npm run typecheck              # tsconfig.json (src) + tsconfig.tools.json (scripts + root configs)
+npm run check:typescript-only  # fail if .js/.jsx/.mjs exist under src/ or scripts/
 ```
 
 See [docs/syntax-highlighting-research.md](docs/syntax-highlighting-research.md) for how Progress 12.8 reference notes map to TextMate scopes.

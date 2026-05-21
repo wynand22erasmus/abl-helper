@@ -5,7 +5,10 @@ import * as vscode from "vscode";
 let keywordSet: Set<string> | undefined;
 let keywordResolvedPath: string | undefined;
 
-/** Load ABL statement keywords from resources/abl-keywords.txt (chriscamicas list). */
+/**
+ * Load ABL statement keywords from resources/abl-keywords.txt (chriscamicas list).
+ * Parses `keywords=` lines; strips parenthetical abbreviations and adds combined forms.
+ */
 export function loadKeywords(extensionRoot?: string): Set<string> {
   const candidates = [
     extensionRoot && path.join(extensionRoot, "out", "resources", "abl-keywords.txt"),
@@ -34,6 +37,7 @@ export function loadKeywords(extensionRoot?: string): Set<string> {
       if (base.length >= 2) {
         s.add(base);
       }
+      // e.g. DEF(ine) → store "define" and "define" from DEF+ine abbreviation
       const paren = raw.match(/^([^(]+)\(([^)]*)/);
       if (paren && paren[1] && paren[2]) {
         const full = (paren[1] + paren[2]).toLowerCase();
@@ -47,6 +51,9 @@ export function loadKeywords(extensionRoot?: string): Set<string> {
   return s;
 }
 
+const MAX_KEYWORD_COMPLETION_ITEMS = 80;
+
+/** Keyword completion items filtered by prefix; sortText keeps keywords before symbols. */
 export function keywordCompletionItems(
   prefix: string,
   extensionRoot: string,
@@ -61,6 +68,9 @@ export function keywordCompletionItems(
       item.range = replaceRange;
       item.sortText = `0_kw_${kw}`;
       items.push(item);
+      if (items.length >= MAX_KEYWORD_COMPLETION_ITEMS) {
+        break;
+      }
     }
   }
   return items;

@@ -3,7 +3,7 @@ import * as vscode from "vscode";
 import { loadKeywords } from "../keywords";
 import { wordAtPosition, buildCompletionList } from "../completion";
 import path from "node:path";
-import { Position, Range, TextDocument, Uri } from "./vscode-stub";
+import { Position, TextDocument, Uri } from "./vscode-stub";
 
 const root = path.join(__dirname, "..", "..");
 

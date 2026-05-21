@@ -1,8 +1,14 @@
+/**
+ * Document formatting tiers:
+ * - Tier A (this module): keyword case + trim trailing whitespace (text-based, no parse tree).
+ * - Tier B (`applyTierBFormatting`): optional tree-sitter structural tweaks (experimental).
+ */
 import type { SyntaxNode } from "web-tree-sitter";
 import { loadKeywords } from "../keywords";
 
 export type KeywordCase = "none" | "upper" | "lower";
 
+/** Rewrite tokens that match the keyword list to upper or lower case. */
 export function applyKeywordCase(source: string, kc: KeywordCase, extensionRoot?: string): string {
   if (kc === "none") {
     return source;
@@ -47,6 +53,7 @@ export function applyTierBFormatting(source: string, root: SyntaxNode): string {
   if (edits.length === 0) {
     return source;
   }
+  // Apply edits from end to start so indices stay valid.
   edits.sort((a, b) => b.start - a.start);
   let out = source;
   for (const e of edits) {

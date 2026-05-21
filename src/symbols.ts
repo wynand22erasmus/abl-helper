@@ -1,6 +1,11 @@
+/**
+ * Document symbol outline from tree-sitter ABL grammar node types.
+ * Only nodes in CONTAINER_TYPES without parse errors become outline entries.
+ */
 import * as vscode from "vscode";
 import type { SyntaxNode } from "web-tree-sitter";
 
+/** Maps tree-sitter-abl container node types to VS Code SymbolKind. */
 const CONTAINER_TYPES: Record<string, vscode.SymbolKind> = {
   class_statement: vscode.SymbolKind.Class,
   procedure_statement: vscode.SymbolKind.Function,
@@ -55,6 +60,7 @@ function collectSymbols(_doc: vscode.TextDocument, node: SyntaxNode, out: vscode
   }
 }
 
+/** Walk the parse tree and return top-level document symbols (nested via children). */
 export function extractDocumentSymbols(doc: vscode.TextDocument, root: SyntaxNode): vscode.DocumentSymbol[] {
   const symbols: vscode.DocumentSymbol[] = [];
   for (const child of root.namedChildren) {

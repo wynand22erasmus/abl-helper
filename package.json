@@ -1,8 +1,8 @@
 {
   "name": "abl-helper",
   "displayName": "ABL Helper",
-  "description": "OpenEdge ABL syntax highlighting, outline, formatting, and syntax checking for VS Code.",
-  "version": "0.1.0",
+  "description": "OpenEdge ABL syntax highlighting, outline, autocomplete, snippets, formatting, and syntax checking for VS Code.",
+  "version": "0.2.0",
   "publisher": "abl-helper",
   "repository": {
     "type": "git",
@@ -122,7 +122,12 @@
         "ablHelper.checkSyntaxExtraArgs": {
           "type": "string",
           "default": "",
-          "description": "Extra arguments appended to the check-syntax invocation (advanced)."
+          "description": "Extra arguments appended to the check-syntax invocation (advanced; quoted paths with spaces are not parsed)."
+        },
+        "ablHelper.checkSyntax.verboseListing": {
+          "type": "boolean",
+          "default": false,
+          "description": "Log the full check-syntax listing in the output channel. When false, listing output is truncated to 8 KB."
         },
         "ablHelper.batchExecutable": {
           "type": "string",
@@ -158,19 +163,19 @@
         "ablHelper.corpus.adeRoot": {
           "type": "string",
           "default": "",
-          "description": "Path to checked-out progress/ADE (release-12.8.x). If empty, tests use ADE_ROOT env or corpus/ade."
+          "description": "Used by corpus smoke tests: path to checked-out progress/ADE. If empty, tests use ADE_ROOT env or corpus/ade."
         },
         "ablHelper.corpus.maxFileBytes": {
           "type": "number",
           "default": 1048576,
           "minimum": 4096,
-          "description": "Skip corpus files larger than this many bytes."
+          "description": "Used by corpus smoke tests: skip ADE files larger than this many bytes."
         },
         "ablHelper.corpus.sampleSize": {
           "type": "number",
           "default": 400,
           "minimum": 1,
-          "description": "Deterministic sample size for ADE corpus smoke tests."
+          "description": "Used by corpus smoke tests: deterministic sample size for ADE parse smoke runs."
         }
       }
     },

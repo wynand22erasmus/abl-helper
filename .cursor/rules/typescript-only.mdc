@@ -1,15 +1,20 @@
 ---
-description: Repo source under src/ and scripts/ must be TypeScript only
-globs: "{src,scripts}/**/*"
+description: Repository maintained source is TypeScript only (no hand-written JS)
+globs: "{src,scripts}/**/*,{esbuild.config,eslint.config,vitest.config}.ts"
 alwaysApply: false
 ---
 
-# TypeScript-only source
+# TypeScript-only repository
 
-All extension logic under `src/` and all repo scripts under `scripts/` must be **TypeScript** (`.ts`). Do not add JavaScript source files (`.js`, `.jsx`, `.mjs`) under those directories.
+All **maintained source** in this repo is **TypeScript** (`.ts`). Do not add hand-written JavaScript (`.js`, `.jsx`, `.mjs`) anywhere except compiled output under `out/` and third-party trees (`node_modules/`, `corpus/`).
 
-- **Allowed:** root TypeScript tooling (`esbuild.config.ts`, `eslint.config.ts`, `vitest.config.ts`), compiled output in `out/`, generated assets, and other non-source files.
-- **Run via:** [tsx](https://github.com/privatenumber/tsx) — no pre-compile step for tooling.
-- **Enforced by:** `tsconfig.json` / `tsconfig.tools.json` (`allowJs: false`), ESLint overrides for forbidden extensions, `npm run check:typescript-only`, and CI.
+| Area | Location | Notes |
+|------|----------|--------|
+| Extension | `src/**/*.ts` | Bundled to `out/extension.js` via esbuild |
+| Repo scripts | `scripts/**/*.ts` | Run with `tsx` (grammar build, WASM fetch, corpus sync, guards) |
+| Root tooling | `esbuild.config.ts`, `eslint.config.ts`, `vitest.config.ts` | Included in `tsconfig.tools.json` |
+
+- **Run via:** [tsx](https://github.com/privatenumber/tsx) for scripts and config — no separate compile step for tooling.
+- **Enforced by:** `allowJs: false` in both tsconfigs, ESLint `no-restricted-syntax` on forbidden paths under `src/` and `scripts/`, `npm run check:typescript-only` (CI), and `npm run lint`.
 
 When adding new code, use `.ts` and match existing module/style conventions in the repo.

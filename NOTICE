@@ -19,6 +19,10 @@ Parsing uses [eglekaz/tree-sitter-abl](https://github.com/eglekaz/tree-sitter-ab
 
 Run `npm run fetch:wasm` to re-download these files if needed.
 
+## Grammar tests (dev only)
+
+Unit tests load TextMate grammars with [vscode-textmate](https://github.com/microsoft/vscode-textmate) and [vscode-oniguruma](https://github.com/microsoft/vscode-oniguruma) (MIT License). These packages are devDependencies and are **not** shipped in the VSIX.
+
 ## ADE corpus (tests only)
 
 Regression tests optionally use [progress/ADE](https://github.com/progress/ADE) at branch `release-12.8.x` (Apache License 2.0). The corpus is **not** shipped in the VSIX; it is checked out under `corpus/ade` locally or in CI.

@@ -104,6 +104,8 @@ export enum DiagnosticSeverity {
 }
 
 export class Diagnostic {
+  source?: string;
+
   constructor(
     public range: Range,
     public message: string,
