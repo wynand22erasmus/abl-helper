@@ -1,6 +1,7 @@
 node_modules/
 out/
 *.vsix
+!abl-helper-dev.vsix
 .DS_Store
 corpus/
 .vscode-test/

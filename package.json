@@ -194,7 +194,7 @@
     "fetch:wasm": "tsx scripts/fetch-wasm.ts",
     "corpus:sync": "tsx scripts/sync-ade-corpus.ts",
     "grammar:build": "tsx scripts/build-syntax-from-research.ts",
-    "package": "npm run build && vsce package --no-dependencies"
+    "package": "npm run build && vsce package --no-dependencies --out abl-helper-dev.vsix"
   },
   "devDependencies": {
     "@eslint/js": "^9.15.0",

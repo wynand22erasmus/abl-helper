@@ -185,11 +185,13 @@ flowchart LR
 | Package installable `.vsix` | `npm run package` |
 | Run tests | `npm test` |
 
-`npm run build` runs `grammar:build` (regenerates `syntaxes/research-injection.tmLanguage.json` from `resources/*.txt`) then `compile` (esbuild → `out/extension.js` and copies `resources/` into `out/resources/`). `npm run package` runs `build` first, then produces `abl-helper-<version>.vsix` in the repo root.
+`npm run build` runs `grammar:build` (regenerates `syntaxes/research-injection.tmLanguage.json` from `resources/*.txt`) then `compile` (esbuild → `out/extension.js` and copies `resources/` into `out/resources/`). `npm run package` runs `build` first, then writes **`abl-helper-dev.vsix`** at the repo root (stable name for git and quick install).
+
+A committed **`abl-helper-dev.vsix`** is kept in the repository so you can install the latest dev build without running `npm run package` locally. After changing extension code, run `npm run package` and commit the updated `abl-helper-dev.vsix` when you want others to pick up that build.
 
 **Run from source (F5):** Open this folder in VS Code, run `npm run build`, choose **Run Extension** from the Run and Debug view (see `.vscode/launch.json`).
 
-**Install the VSIX:** Extensions → `...` → **Install from VSIX...** → select the `.vsix` from `npm run package`.
+**Install the VSIX:** Extensions → `...` → **Install from VSIX...** → select `abl-helper-dev.vsix` (from the repo or from `npm run package`).
 
 Native `tree-sitter-abl` is optional for development; the extension falls back to committed WASM under `wasm/`. On Windows you may run `npm rebuild tree-sitter-abl` after `npm ci` if you want the native parser.
 
@@ -200,6 +202,7 @@ Extension source under `src/` and repo scripts under `scripts/` are **TypeScript
 ```bash
 npm ci
 npm run build
+npm run package   # refresh abl-helper-dev.vsix before committing extension changes
 npm test
 npm run typecheck              # src + tooling (tsconfig.json + tsconfig.tools.json)
 npm run check:typescript-only  # CI guard: no .js/.jsx/.mjs under src/ or scripts/
