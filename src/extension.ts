@@ -174,7 +174,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
           return buildCompletionList(doc, position, context.extensionPath, root);
         },
       },
-      /[\w-]/,
+      ..."abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-".split(""),
     ),
   );
 

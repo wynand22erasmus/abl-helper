@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import * as vscode from "vscode";
 import { loadKeywords } from "../keywords";
 import { wordAtPosition, buildCompletionList } from "../completion";
 import path from "node:path";
@@ -16,7 +17,10 @@ describe("completion", () => {
   it("wordAtPosition finds partial word", () => {
     const doc = TextDocument.create(Uri.file("x.p"), "DEF VAR x AS INT");
     const pos = new Position(0, 3);
-    const { word, range } = wordAtPosition(doc, pos);
+    const { word, range } = wordAtPosition(
+      doc as unknown as vscode.TextDocument,
+      pos as unknown as vscode.Position,
+    );
     expect(word).toBe("DEF");
     expect(range.start.character).toBe(0);
     expect(range.end.character).toBe(3);
@@ -25,7 +29,12 @@ describe("completion", () => {
   it("buildCompletionList includes keyword matches without parser", () => {
     const doc = TextDocument.create(Uri.file("x.p"), "def");
     const pos = new Position(0, 3);
-    const items = buildCompletionList(doc, pos, root, null);
+    const items = buildCompletionList(
+      doc as unknown as vscode.TextDocument,
+      pos as unknown as vscode.Position,
+      root,
+      null,
+    );
     const labels = items.map((i) =>
       typeof i.label === "string" ? i.label : i.label,
     );

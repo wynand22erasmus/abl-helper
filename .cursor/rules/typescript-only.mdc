@@ -1,14 +1,15 @@
 ---
-description: Extension source under src/ must be TypeScript only
-globs: src/**/*
+description: Repo source under src/ and scripts/ must be TypeScript only
+globs: "{src,scripts}/**/*"
 alwaysApply: false
 ---
 
-# TypeScript-only extension source
+# TypeScript-only source
 
-All extension logic under `src/` must be **TypeScript** (`.ts`). Do not add JavaScript source files (`.js`, `.jsx`) under `src/`.
+All extension logic under `src/` and all repo scripts under `scripts/` must be **TypeScript** (`.ts`). Do not add JavaScript source files (`.js`, `.jsx`, `.mjs`) under those directories.
 
-- **Allowed:** root/tooling `.mjs` (e.g. `esbuild.config.mjs`, `eslint.config.mjs`, `scripts/*.mjs`), compiled output in `out/`, and other non-`src` assets.
-- **Enforced by:** `tsconfig.json` (`allowJs: false`), ESLint override for `src/**/*.{js,jsx}`, `npm run check:typescript-only`, and CI.
+- **Allowed:** root TypeScript tooling (`esbuild.config.ts`, `eslint.config.ts`, `vitest.config.ts`), compiled output in `out/`, generated assets, and other non-source files.
+- **Run via:** [tsx](https://github.com/privatenumber/tsx) — no pre-compile step for tooling.
+- **Enforced by:** `tsconfig.json` / `tsconfig.tools.json` (`allowJs: false`), ESLint overrides for forbidden extensions, `npm run check:typescript-only`, and CI.
 
-When adding new extension code, use `.ts` and match existing module/style conventions in the repo.
+When adding new code, use `.ts` and match existing module/style conventions in the repo.

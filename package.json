@@ -4,7 +4,16 @@
   "description": "OpenEdge ABL syntax highlighting, outline, formatting, and syntax checking for VS Code.",
   "version": "0.1.0",
   "publisher": "abl-helper",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wynand22erasmus/abl-helper.git"
+  },
+  "homepage": "https://github.com/wynand22erasmus/abl-helper#readme",
+  "bugs": {
+    "url": "https://github.com/wynand22erasmus/abl-helper/issues"
+  },
   "license": "MIT",
+  "type": "module",
   "engines": {
     "vscode": "^1.85.0"
   },
@@ -172,18 +181,20 @@
     }
   },
   "scripts": {
-    "vscode:prepublish": "npm run compile",
-    "compile": "node esbuild.config.mjs",
-    "watch": "node esbuild.config.mjs --watch",
-    "lint": "eslint src && npm run check:typescript-only",
-    "check:typescript-only": "node scripts/check-typescript-only.mjs",
+    "vscode:prepublish": "npm run build",
+    "build": "npm run grammar:build && npm run compile",
+    "compile": "tsx esbuild.config.ts",
+    "watch": "tsx esbuild.config.ts --watch",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.tools.json --noEmit",
+    "lint": "eslint . && npm run check:typescript-only",
+    "check:typescript-only": "tsx scripts/check-typescript-only.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:corpus": "vitest run src/test/corpus.test.ts",
-    "fetch:wasm": "node scripts/fetch-wasm.mjs",
-    "corpus:sync": "node scripts/sync-ade-corpus.mjs",
-    "grammar:build": "node scripts/build-syntax-from-research.mjs",
-    "package": "vsce package --no-dependencies --allow-missing-repository"
+    "fetch:wasm": "tsx scripts/fetch-wasm.ts",
+    "corpus:sync": "tsx scripts/sync-ade-corpus.ts",
+    "grammar:build": "tsx scripts/build-syntax-from-research.ts",
+    "package": "npm run build && vsce package --no-dependencies"
   },
   "devDependencies": {
     "@eslint/js": "^9.15.0",
@@ -192,7 +203,9 @@
     "@vscode/vsce": "^3.2.0",
     "esbuild": "^0.24.0",
     "eslint": "^9.15.0",
+    "jiti": "^2.4.2",
     "typescript": "^5.6.3",
+    "tsx": "^4.19.2",
     "typescript-eslint": "^8.14.0",
     "vitest": "^2.1.5",
     "vscode-textmate": "^9.0.0",

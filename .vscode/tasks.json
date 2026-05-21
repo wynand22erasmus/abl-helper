@@ -11,6 +11,12 @@
     },
     {
       "type": "npm",
+      "script": "build",
+      "problemMatcher": ["$esbuild"],
+      "group": "build"
+    },
+    {
+      "type": "npm",
       "script": "compile",
       "problemMatcher": ["$esbuild"],
       "group": "build"

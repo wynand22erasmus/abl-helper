@@ -5,8 +5,9 @@ out/**/*.map
 .gitignore
 .github/**
 tsconfig.json
-eslint.config.mjs
-esbuild.config.mjs
+tsconfig.tools.json
+eslint.config.ts
+esbuild.config.ts
 vitest.config.ts
 corpus/**
 scripts/**

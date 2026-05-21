@@ -115,7 +115,7 @@ Legend: **Done** = available in v0.1.x · **Planned** = on the roadmap below · 
 
 | Status | Feature |
 |--------|---------|
-| Done | TypeScript-only `src/` enforcement (ESLint + CI) |
+| Done | TypeScript-only source enforcement (`src/`, `scripts/`; ESLint + CI) |
 | Done | Unit tests — symbols, check-syntax parser, grammar scopes |
 | Done | ADE corpus smoke tests (`npm run test:corpus`, CI job) |
 | Done | GitHub Actions — compile, lint, test, package VSIX |
@@ -171,16 +171,38 @@ flowchart LR
 
 - Full LSP server, debugger, PASOE attach, class browser, SonarQube/CABL integration — use the specialized extensions listed under [Coexistence](#coexistence-with-other-abl-extensions).
 
+## Building the extension
+
+**Prerequisites:** [Node.js](https://nodejs.org/) 20+ and npm.
+
+| Goal | Command |
+|------|---------|
+| Install dependencies | `npm ci` |
+| Full build (grammar + extension) | `npm run build` |
+| Compile TypeScript only | `npm run compile` |
+| Watch while editing | `npm run watch` |
+| Type-check without emit | `npm run typecheck` |
+| Package installable `.vsix` | `npm run package` |
+| Run tests | `npm test` |
+
+`npm run build` runs `grammar:build` (regenerates `syntaxes/research-injection.tmLanguage.json` from `resources/*.txt`) then `compile` (esbuild → `out/extension.js` and copies `resources/` into `out/resources/`). `npm run package` runs `build` first, then produces `abl-helper-<version>.vsix` in the repo root.
+
+**Run from source (F5):** Open this folder in VS Code, run `npm run build`, choose **Run Extension** from the Run and Debug view (see `.vscode/launch.json`).
+
+**Install the VSIX:** Extensions → `...` → **Install from VSIX...** → select the `.vsix` from `npm run package`.
+
+Native `tree-sitter-abl` is optional for development; the extension falls back to committed WASM under `wasm/`. On Windows you may run `npm rebuild tree-sitter-abl` after `npm ci` if you want the native parser.
+
 ## Development
 
-Extension source under `src/` is **TypeScript only** (`.ts`). Do not add `.js` or `.jsx` files there; root tooling may stay as `.mjs` (`esbuild.config.mjs`, `eslint.config.mjs`, `scripts/*.mjs`). Compiled output lives in `out/`.
+Extension source under `src/` and repo scripts under `scripts/` are **TypeScript only** (`.ts`). Do not add `.js`, `.jsx`, or `.mjs` there. Root tooling (`esbuild.config.ts`, `eslint.config.ts`, `scripts/*.ts`) runs via [tsx](https://github.com/privatenumber/tsx) without a separate compile step. Bundled extension output lives in `out/` (gitignored; `out/extension.js` from esbuild).
 
 ```bash
-npm install
-npm run compile
-npm run grammar:build           # regenerate syntaxes/research-injection.tmLanguage.json
+npm ci
+npm run build
 npm test
-npm run check:typescript-only   # CI guard: no .js/.jsx under src/
+npm run typecheck              # src + tooling (tsconfig.json + tsconfig.tools.json)
+npm run check:typescript-only  # CI guard: no .js/.jsx/.mjs under src/ or scripts/
 ```
 
 See [docs/syntax-highlighting-research.md](docs/syntax-highlighting-research.md) for how Progress 12.8 reference notes map to TextMate scopes.

@@ -7,7 +7,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import * as https from "node:https";
 
-function download(url, dest) {
+function download(url: string, dest: string): Promise<void> {
   return new Promise((resolve, reject) => {
     const file = fs.createWriteStream(dest);
     https
@@ -48,7 +48,8 @@ const root = process.cwd();
 const wasmDir = path.join(root, "wasm");
 fs.mkdirSync(wasmDir, { recursive: true });
 
-const coreUrl = "https://github.com/tree-sitter/tree-sitter/releases/download/v0.24.7/tree-sitter.wasm";
+const coreUrl =
+  "https://github.com/tree-sitter/tree-sitter/releases/download/v0.24.7/tree-sitter.wasm";
 const ablUrl = "https://unpkg.com/tree-sitter-abl@0.1.2/tree-sitter-abl.wasm";
 
 await download(coreUrl, path.join(wasmDir, "tree-sitter.wasm"));

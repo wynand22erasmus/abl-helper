@@ -4,17 +4,30 @@ import * as esbuild from "esbuild";
 
 const watch = process.argv.includes("--watch");
 
+const RESOURCE_FILES = ["check-syntax.p", "abl-keywords.txt"];
+
 async function copyAssets() {
-  const outDir = path.join(process.cwd(), "out");
-  const resOut = path.join(outDir, "resources");
+  const resOut = path.join(process.cwd(), "out", "resources");
   fs.mkdirSync(resOut, { recursive: true });
-  for (const f of ["check-syntax.p", "abl-keywords.txt"]) {
+  for (const f of RESOURCE_FILES) {
     const src = path.join(process.cwd(), "resources", f);
     if (fs.existsSync(src)) {
       fs.copyFileSync(src, path.join(resOut, f));
     }
   }
 }
+
+/** Copy resources/ into out/resources/ after every esbuild rebuild (including watch). */
+const copyAssetsPlugin = {
+  name: "copy-abl-assets",
+  setup(build: esbuild.PluginBuild) {
+    build.onEnd(async (result) => {
+      if (result.errors.length === 0) {
+        await copyAssets();
+      }
+    });
+  },
+};
 
 const ctx = await esbuild.context({
   entryPoints: ["src/extension.ts"],
@@ -26,12 +39,13 @@ const ctx = await esbuild.context({
   sourcemap: true,
   external: ["vscode", "tree-sitter", "tree-sitter-abl"],
   logLevel: "info",
+  plugins: [copyAssetsPlugin],
 });
 
 if (watch) {
   await ctx.watch();
+  console.log("[esbuild] watching src/extension.ts (assets → out/resources/ on each rebuild)");
 } else {
   await ctx.rebuild();
-  await copyAssets();
   await ctx.dispose();
 }

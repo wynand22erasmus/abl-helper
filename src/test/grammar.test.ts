@@ -37,8 +37,8 @@ function collectScopes(tokens: IToken[]): string[] {
   for (const t of tokens) {
     if (t.scopes) {
       scopes.push(...t.scopes);
-    } else if ((t as { scope?: string }).scope) {
-      scopes.push((t as { scope: string }).scope);
+    } else if ((t as unknown as { scope?: string }).scope) {
+      scopes.push((t as unknown as { scope: string }).scope);
     }
   }
   return scopes;

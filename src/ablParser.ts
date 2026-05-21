@@ -23,14 +23,10 @@ function tryNativeParser(): AblParserHandle | undefined {
     return {
       mode: "native",
       parse(source: string) {
-        return parser.parse(source) as Parser.Tree;
+        return parser.parse(source) as unknown as Parser.Tree;
       },
       dispose() {
-        try {
-          parser.delete();
-        } catch {
-          /* ignore */
-        }
+        /* node-tree-sitter Parser has no delete(); GC handles native parser */
       },
     };
   } catch {

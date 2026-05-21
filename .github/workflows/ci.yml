@@ -20,9 +20,9 @@ jobs:
           node-version: "20"
           cache: npm
       - run: npm ci
-      - run: npm run grammar:build
       - run: npm rebuild tree-sitter-abl || true
-      - run: npm run compile
+      - run: npm run build
+      - run: npm run typecheck
       - run: npm run check:typescript-only
       - run: npm run lint
       - run: npm test
