@@ -57,7 +57,7 @@ Comprehensive inventory of what **ABL Helper** implements today, what is intenti
 
 - **Provider:** `DocumentSymbolProvider` in [`src/extension.ts`](../src/extension.ts)
 - **Parser:** tree-sitter-abl via [`src/ablParser.ts`](../src/ablParser.ts) — **native** → **WASM** (`wasm/tree-sitter.wasm`, `wasm/tree-sitter-abl.wasm`) → **none** (empty outline)
-- **Symbol kinds:** class, procedure, function, method, constructor, destructor, temp-table, buffer, dataset, enum, interface ([`src/symbols.ts`](../src/symbols.ts))
+- **Symbol kinds:** class, interface, procedure, function, method, constructor, destructor, enum (+ members), variables, properties, parameters, events, temp-table/buffer/dataset and other DEFINE types, includes, USING, ON triggers, labeled DO/REPEAT/FOR blocks ([`src/symbols.ts`](../src/symbols.ts))
 - **Setting:** `ablHelper.outline.debounceMs` (default 200) — reserved for future debouncing; outline re-parses on provider invocation
 - **Command:** **ABL Helper: Reload Tree-sitter Parser** — resets parser handle after WASM/native issues
 

@@ -46,8 +46,22 @@ function symbolKindToCompletion(kind: vscode.SymbolKind): vscode.CompletionItemK
       return vscode.CompletionItemKind.Interface;
     case vscode.SymbolKind.Enum:
       return vscode.CompletionItemKind.Enum;
+    case vscode.SymbolKind.EnumMember:
+      return vscode.CompletionItemKind.EnumMember;
     case vscode.SymbolKind.Constructor:
       return vscode.CompletionItemKind.Constructor;
+    case vscode.SymbolKind.Property:
+      return vscode.CompletionItemKind.Property;
+    case vscode.SymbolKind.Event:
+      return vscode.CompletionItemKind.Event;
+    case vscode.SymbolKind.Module:
+      return vscode.CompletionItemKind.Module;
+    case vscode.SymbolKind.Namespace:
+      return vscode.CompletionItemKind.Module;
+    case vscode.SymbolKind.Struct:
+      return vscode.CompletionItemKind.Struct;
+    case vscode.SymbolKind.Variable:
+      return vscode.CompletionItemKind.Variable;
     default:
       return vscode.CompletionItemKind.Variable;
   }

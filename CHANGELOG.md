@@ -2,7 +2,9 @@
 
 ## Unreleased
 
-_(nothing yet)_
+### Changed
+
+- **Document outline** — Comprehensive symbol tree: variables, properties, parameters, events, DEFINE types, includes, USING, ON triggers, enum members, labeled blocks; name selection ranges and details; symbols retained when subtrees have parse errors.
 
 ## 0.2.0 — 2026-05-21
 
