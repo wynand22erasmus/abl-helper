@@ -17,7 +17,7 @@ OpenEdge ABL language support for Visual Studio Code: **syntax highlighting**, *
 
 - **VS Code** 1.85+
 - **Check syntax only**: OpenEdge 11.7+ with `_progres` on `PATH` via `DLC` (developer license). Set `ablHelper.dlcPath` or the `DLC` environment variable.
-- **Outline / parsing**: No OpenEdge required. Parsing uses bundled `web-tree-sitter` with WASM under `src/assets/` (shipped as `out/assets/`; refresh with `npm run fetch:parser-wasm`).
+- **Outline / parsing**: No OpenEdge required. Parsing uses the vendored runtime in [`parser/`](parser/) with WASM under `src/assets/` (shipped as `out/assets/`; copied via `npm run build:parser`).
 
 ## Settings
 
@@ -191,7 +191,7 @@ flowchart LR
 | Package installable `.vsix` | `npm run package` |
 | Run tests | `npm test` |
 
-`npm run build` runs `grammar:build` (regenerates `syntaxes/research-injection.tmLanguage.json` from `resources/*.txt`) then `compile` (esbuild → `out/extension.js` and copies `resources/` into `out/resources/`). `npm run package` runs `build` first, then writes **`abl-helper-dev.vsix`** at the repo root (stable name for git and quick install).
+`npm run build` runs `grammar:build` (regenerates `syntaxes/research-injection.tmLanguage.json` from `resources/*.txt`), then `compile` (grammar.js, ESM `out/extension.js`, per-file `out/emit/`, `out/scripts/`, parser runtime wrapper), then `build:parser` (WASM into `src/assets/`). `npm run package` runs `build` first, then writes **`abl-helper-dev.vsix`** at the repo root (stable name for git and quick install).
 
 A committed **`abl-helper-dev.vsix`** is kept in the repository so you can install the latest dev build without running `npm run package` locally. After changing extension code, run `npm run package` and commit the updated `abl-helper-dev.vsix` when you want others to pick up that build.
 
@@ -199,11 +199,18 @@ A committed **`abl-helper-dev.vsix`** is kept in the repository so you can insta
 
 **Install the VSIX:** Extensions → `...` → **Install from VSIX...** → select `abl-helper-dev.vsix` (from the repo or from `npm run package`).
 
-Parsing is **WASM-only** (`web-tree-sitter` bundled in `out/extension.js`; grammar binaries in `out/assets/`). The extension warms the parser on activate so outline and completion avoid a cold start.
+Parsing is **WASM-only** (vendored `parser/runtime/` loaded at runtime; grammar in `parser/abl/`; WASM in `out/assets/`). Edit grammar sources locally — see [parser/README.md](parser/README.md). The extension warms the parser on activate.
 
 ## Development
 
-Maintained source in this repository is **TypeScript only** (`.ts`): extension code in `src/`, automation in `scripts/`, and root configs (`esbuild.config.ts`, `eslint.config.ts`, `vitest.config.ts`). Do not add hand-written `.js`, `.jsx`, or `.mjs` under `src/` or `scripts/`. Tooling runs via [tsx](https://github.com/privatenumber/tsx) without a separate compile step. Bundled extension output lives in `out/` (gitignored; `out/extension.js` from esbuild).
+Maintained Node source is **TypeScript only** — see **[docs/TYPESCRIPT.md](docs/TYPESCRIPT.md)** for the full language policy, non-TypeScript exclusions (`parser/`, WASM, TextMate JSON, OpenEdge `.p`), and the compile pipeline (ESM extension bundle; vendored `tree-sitter.cjs` loaded via `parser/runtime/tree-sitter.js`).
+
+| Area | Location |
+|------|----------|
+| Extension | `src/**/*.ts` → `out/extension.js` (esbuild ESM) + `out/emit/` (tsc) |
+| Scripts | `scripts/**/*.ts` → `out/scripts/` (tsc); dev tasks still use `tsx` |
+| ABL grammar (authored) | `parser/abl/grammar.ts` → `grammar.js` (ESM, `compile:grammar`) |
+| Parser runtime | `parser/runtime/tree-sitter.ts` → `tree-sitter.js`; `tree-sitter.cjs` vendored (Emscripten) |
 
 ```bash
 npm ci
@@ -213,6 +220,7 @@ npm test
 npm run lint                   # eslint . + check:typescript-only
 npm run typecheck              # tsconfig.json (src) + tsconfig.tools.json (scripts + root configs)
 npm run check:typescript-only  # fail if .js/.jsx/.mjs exist under src/ or scripts/
+npm run audit:languages        # optional: list non-TS files outside ignored trees
 ```
 
 See [docs/syntax-highlighting-research.md](docs/syntax-highlighting-research.md) for how Progress 12.8 reference notes map to TextMate scopes.
@@ -232,13 +240,14 @@ CI checks out ADE at a pinned commit (see `.github/workflows/ci.yml`).
 
 Third-party components used by ABL Helper. Full license texts are in [LICENSE](LICENSE) and [NOTICE](NOTICE).
 
-### Parsing (WebAssembly, shipped in the VSIX)
+### Parsing (vendored under `parser/`, shipped in the VSIX)
 
-| Component | Source | License |
-|-----------|--------|---------|
-| [tree-sitter](https://github.com/tree-sitter/tree-sitter) runtime WASM | [tree-sitter v0.24.7 release](https://github.com/tree-sitter/tree-sitter/releases/tag/v0.24.7) (`src/assets/tree-sitter.wasm`) | MIT |
-| [web-tree-sitter](https://github.com/tree-sitter/tree-sitter/tree/master/lib/binding_web) | npm `web-tree-sitter@0.24.7` (bundled into the extension) | MIT |
-| [tree-sitter-abl](https://github.com/eglekaz/tree-sitter-abl) grammar WASM | npm `tree-sitter-abl@0.1.2` (`src/assets/tree-sitter-abl.wasm`, via `npm run fetch:parser-wasm`) | MIT |
+| Component | Local path | Upstream (pinned) | License |
+|-----------|------------|-------------------|---------|
+| tree-sitter runtime JS + WASM | [`parser/runtime/`](parser/runtime/) | [tree-sitter](https://github.com/tree-sitter/tree-sitter) **v0.24.7** `lib/binding_web` | MIT |
+| ABL grammar + WASM | [`parser/abl/`](parser/abl/) | [eglekaz/tree-sitter-abl](https://github.com/eglekaz/tree-sitter-abl) **0.1.2** | MIT |
+
+Built assets copied to `src/assets/` → `out/assets/` by `npm run build:parser`. Refresh upstream copies with `npm run sync:parser-sources`.
 
 ### Syntax highlighting (TextMate)
 

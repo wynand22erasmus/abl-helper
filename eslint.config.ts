@@ -9,7 +9,16 @@ export default tseslint.config(
   eslint.configs.recommended,
   ...tseslint.configs.recommended,
   {
-    ignores: ["out/**", "node_modules/**", "corpus/**"],
+    ignores: [
+      "out/**",
+      "node_modules/**",
+      "corpus/**",
+      "parser/runtime/**",
+      "parser/runtime/index.js",
+      "parser/**/*.cjs",
+      "parser/abl/**",
+      "parser/runtime/tree-sitter.cjs",
+    ],
   },
   {
     rules: {

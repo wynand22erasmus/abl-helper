@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 /**
  * Fail if any .js, .jsx, or .mjs source files exist under src/ or scripts/.
- * Compiled output in out/ and dependencies in node_modules/ are excluded.
+ *
+ * Does NOT apply to parser/ (grammar.js is generated; tree-sitter.cjs is vendored)
+ * or compiled output under out/. See docs/TYPESCRIPT.md.
  */
 import { readdirSync, statSync } from "node:fs";
 import { extname, join, relative } from "node:path";

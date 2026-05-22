@@ -1,0 +1,10 @@
+{
+  "grammars": [
+    {
+      "name": "abl",
+      "scope": "source.abl",
+      "path": ".",
+      "file-types": ["p", "cls", "w", "i"]
+    }
+  ]
+}

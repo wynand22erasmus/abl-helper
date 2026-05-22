@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "noEmit": true,
+    "skipLibCheck": true,
+    "allowJs": false,
+    "noImplicitAny": false,
+    "strict": false
+  },
+  "include": [
+    "parser/abl/grammar.ts",
+    "parser/abl/grammar-dsl.d.ts",
+    "parser/abl/src/scanner.host.ts",
+    "parser/abl/src/scanner.manifest.ts",
+    "parser/abl/src/grammar-metadata.d.ts"
+  ]
+}

@@ -1,6 +1,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as vscode from "vscode";
+import { moduleDir } from "./moduleDir.js";
 
 let keywordSet: Set<string> | undefined;
 let keywordResolvedPath: string | undefined;
@@ -13,8 +14,8 @@ export function loadKeywords(extensionRoot?: string): Set<string> {
   const candidates = [
     extensionRoot && path.join(extensionRoot, "out", "resources", "abl-keywords.txt"),
     extensionRoot && path.join(extensionRoot, "resources", "abl-keywords.txt"),
-    path.join(__dirname, "..", "resources", "abl-keywords.txt"),
-    path.join(__dirname, "abl-keywords.txt"),
+    path.join(moduleDir(import.meta.url), "..", "resources", "abl-keywords.txt"),
+    path.join(moduleDir(import.meta.url), "abl-keywords.txt"),
   ].filter(Boolean) as string[];
   const p = candidates.find((c) => fs.existsSync(c)) ?? candidates[0]!;
   if (keywordSet && keywordResolvedPath === p) {

@@ -3,7 +3,7 @@
  * - Tier A (this module): keyword case + trim trailing whitespace (text-based, no parse tree).
  * - Tier B (`applyTierBFormatting`): optional tree-sitter structural tweaks (experimental).
  */
-import type { SyntaxNode } from "web-tree-sitter";
+import type { SyntaxNode } from "../parser/index";
 import { loadKeywords } from "../keywords";
 
 export type KeywordCase = "none" | "upper" | "lower";

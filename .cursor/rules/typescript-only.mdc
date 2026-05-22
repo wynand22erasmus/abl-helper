@@ -1,20 +1,21 @@
 ---
 description: Repository maintained source is TypeScript only (no hand-written JS)
-globs: "{src,scripts}/**/*,{esbuild.config,eslint.config,vitest.config}.ts"
+globs: "{src,scripts}/**/*,{esbuild.config,eslint.config,vitest.config}.ts,parser/abl/grammar.ts"
 alwaysApply: false
 ---
 
 # TypeScript-only repository
 
-All **maintained source** in this repo is **TypeScript** (`.ts`). Do not add hand-written JavaScript (`.js`, `.jsx`, `.mjs`) anywhere except compiled output under `out/` and third-party trees (`node_modules/`, `corpus/`).
+All **maintained Node source** is **TypeScript** (`.ts`). See [docs/TYPESCRIPT.md](../docs/TYPESCRIPT.md).
 
 | Area | Location | Notes |
 |------|----------|--------|
-| Extension | `src/**/*.ts` | Bundled to `out/extension.js` via esbuild |
-| Repo scripts | `scripts/**/*.ts` | Run with `tsx` (grammar build, WASM fetch, corpus sync, guards) |
-| Root tooling | `esbuild.config.ts`, `eslint.config.ts`, `vitest.config.ts` | Included in `tsconfig.tools.json` |
+| Extension | `src/**/*.ts` | Bundled to `out/extension.js` (CJS) via esbuild |
+| Repo scripts | `scripts/**/*.ts` | Run with `tsx` |
+| Root tooling | `esbuild.config.ts`, `eslint.config.ts`, `vitest.config.ts` | `tsconfig.tools.json` |
+| ABL grammar (authored) | `parser/abl/grammar.ts` | Emits `grammar.js` via `npm run grammar:abl:build` |
 
-- **Run via:** [tsx](https://github.com/privatenumber/tsx) for scripts and config — no separate compile step for tooling.
-- **Enforced by:** `allowJs: false` in both tsconfigs, ESLint `no-restricted-syntax` on forbidden paths under `src/` and `scripts/`, `npm run check:typescript-only` (CI), and `npm run lint`.
+**Excluded (not TypeScript):** generated `grammar.js`, `scanner.c`, vendored `tree-sitter.cjs`, WASM, TextMate JSON, OpenEdge `.p`.
 
-When adding new code, use `.ts` and match existing module/style conventions in the repo.
+- **Enforced by:** `allowJs: false`, `npm run check:typescript-only` (under `src/` + `scripts/`), `npm run typecheck`, CI `lint`.
+- Do not add hand-written `.js`/`.jsx`/`.mjs` under `src/` or `scripts/`.

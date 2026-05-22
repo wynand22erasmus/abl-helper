@@ -1,0 +1,19 @@
+{
+  "extends": "./tsconfig.tools.json",
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "noEmit": false,
+    "outDir": "out/scripts",
+    "rootDir": "scripts",
+    "declaration": false
+  },
+  "include": ["scripts/**/*.ts"],
+  "exclude": [
+    "node_modules",
+    "out",
+    "scripts/build-parser-grammar.ts",
+    "scripts/verify-parser-artifacts.ts",
+    "scripts/build-parser-assets.ts"
+  ]
+}

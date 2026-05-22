@@ -1,6 +1,6 @@
 /**
  * VS Code extension entry: registers ABL language providers and commands.
- * Parser uses bundled web-tree-sitter + extension assets (warmed on activate).
+ * Parser uses vendored tree-sitter runtime (parser/runtime) + assets (warmed on activate).
  */
 import * as fs from "node:fs";
 import * as path from "node:path";
@@ -159,7 +159,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
           const handle = await ensureParser();
           if (handle.mode === "none") {
             vscode.window.showWarningMessage(
-              "ABL Helper: Parser still unavailable (rebuild the extension or run npm run fetch:parser-wasm).",
+              "ABL Helper: Parser still unavailable (run npm run build:parser and rebuild the extension).",
             );
           } else {
             vscode.window.showInformationMessage("ABL Helper: parser reloaded.");

@@ -1,26 +1,30 @@
 /**
- * Tree-sitter ABL parser: bundled web-tree-sitter + extension-shipped WASM bytes.
+ * Tree-sitter ABL parser: local vendored runtime (parser/runtime) + WASM bytes.
  */
-import Parser from "web-tree-sitter";
+import { getTreeSitterParser } from "./parser/loadRuntime";
+import type { ParseTree, TreeSitterParserCtor } from "./parser/tree-sitter-types";
 import { getParserWasmBytes } from "./parserWasm";
 
 export type AblParserMode = "wasm" | "none";
 
 export interface AblParserHandle {
   mode: AblParserMode;
-  parse(source: string): Parser.Tree;
+  parse(source: string): ParseTree;
   dispose(): void;
 }
 
-let initPromise: Promise<Parser> | undefined;
-let activeParser: Parser | undefined;
+type ParserInstance = InstanceType<TreeSitterParserCtor>;
 
-async function getParser(): Promise<Parser> {
+let initPromise: Promise<ParserInstance> | undefined;
+let activeParser: ParserInstance | undefined;
+
+async function getParser(): Promise<ParserInstance> {
   if (activeParser) {
     return activeParser;
   }
   if (!initPromise) {
     initPromise = (async () => {
+      const Parser = await getTreeSitterParser();
       const { core, abl } = getParserWasmBytes();
       await Parser.init({ wasmBinary: core });
       const language = await Parser.Language.load(abl);
