@@ -7,7 +7,7 @@ OpenEdge ABL language support for Visual Studio Code: **syntax highlighting**, *
 | Feature | Description |
 |--------|-------------|
 | Syntax highlighting | TextMate grammar for `.p`, `.cls`, `.w`, `.i` plus research-driven injection (OpenEdge 12.8 reserved keywords, preprocessors) |
-| Outline | Document symbols from [tree-sitter-abl](https://github.com/eglekaz/tree-sitter-abl) (native or WASM) |
+| Outline | Document symbols from [tree-sitter-abl](https://github.com/eglekaz/tree-sitter-abl) via bundled WebAssembly |
 | Autocomplete | ABL keywords + symbols from the current file (no database schema yet) |
 | Snippets | Common constructs — procedure, class, method, `defvar`, `foreach`, include, etc. |
 | Format document | Trim trailing whitespace; optional keyword upper/lower; experimental tree-sitter pass (off by default) |
@@ -17,7 +17,7 @@ OpenEdge ABL language support for Visual Studio Code: **syntax highlighting**, *
 
 - **VS Code** 1.85+
 - **Check syntax only**: OpenEdge 11.7+ with `_progres` on `PATH` via `DLC` (developer license). Set `ablHelper.dlcPath` or the `DLC` environment variable.
-- **Outline / parsing**: No OpenEdge required if `wasm/tree-sitter.wasm` and `wasm/tree-sitter-abl.wasm` are present (included in repo; refresh with `npm run fetch:wasm`).
+- **Outline / parsing**: No OpenEdge required. Parsing uses bundled `web-tree-sitter` with `wasm/tree-sitter.wasm` and `wasm/tree-sitter-abl.wasm` (included in the repo; refresh with `npm run fetch:wasm`).
 
 ## Settings
 
@@ -199,7 +199,7 @@ A committed **`abl-helper-dev.vsix`** is kept in the repository so you can insta
 
 **Install the VSIX:** Extensions → `...` → **Install from VSIX...** → select `abl-helper-dev.vsix` (from the repo or from `npm run package`).
 
-Native `tree-sitter-abl` is optional for development; the extension falls back to committed WASM under `wasm/`. On Windows you may run `npm rebuild tree-sitter-abl` after `npm ci` if you want the native parser.
+Parsing is **WASM-only** (`web-tree-sitter` bundled in `out/extension.js`; grammar binaries under `wasm/`). The extension warms the parser on activate so outline and completion avoid a cold start.
 
 ## Development
 
@@ -228,6 +228,34 @@ npm run test:corpus    # parse smoke on deterministic sample
 
 CI checks out ADE at a pinned commit (see `.github/workflows/ci.yml`).
 
+## Credits
+
+Third-party components used by ABL Helper. Full license texts are in [LICENSE](LICENSE) and [NOTICE](NOTICE).
+
+### Parsing (WebAssembly, shipped in the VSIX)
+
+| Component | Source | License |
+|-----------|--------|---------|
+| [tree-sitter](https://github.com/tree-sitter/tree-sitter) runtime WASM | [tree-sitter v0.24.7 release](https://github.com/tree-sitter/tree-sitter/releases/tag/v0.24.7) (`tree-sitter.wasm`) | MIT |
+| [web-tree-sitter](https://github.com/tree-sitter/tree-sitter/tree/master/lib/binding_web) | npm `web-tree-sitter@0.24.7` (bundled into the extension) | MIT |
+| [tree-sitter-abl](https://github.com/eglekaz/tree-sitter-abl) grammar WASM | npm `tree-sitter-abl@0.1.2` (`tree-sitter-abl.wasm` via `npm run fetch:wasm`) | MIT |
+
+### Syntax highlighting (TextMate)
+
+| Component | Source | License |
+|-----------|--------|---------|
+| OpenEdge ABL grammar | [chriscamicas/abl-tmlanguage](https://github.com/chriscamicas/abl-tmlanguage) (`syntaxes/abl.tmLanguage.json`) | MIT |
+| ABL keyword list | Same project (`resources/abl-keywords.txt`) | MIT |
+| Research keyword injection | Progress OpenEdge 12.8 reference notes (`resources/*.txt`, `syntaxes/research-injection.tmLanguage.json`) | See [docs/syntax-highlighting-research.md](docs/syntax-highlighting-research.md) |
+
+### Development and tests only (not shipped in the VSIX)
+
+| Component | Source | License |
+|-----------|--------|---------|
+| [vscode-textmate](https://github.com/microsoft/vscode-textmate) | Grammar unit tests | MIT |
+| [vscode-oniguruma](https://github.com/microsoft/vscode-oniguruma) | Oniguruma WASM for grammar tests | MIT |
+| [progress/ADE](https://github.com/progress/ADE) | Optional corpus smoke tests (`corpus/ade`, branch `release-12.8.x`) | Apache-2.0 |
+
 ## License
 
-MIT — see the LICENSE and NOTICE files in this repository for third-party attributions.
+MIT — see [LICENSE](LICENSE) and [NOTICE](NOTICE).

@@ -3,5 +3,5 @@ out/
 *.vsix
 !abl-helper-dev.vsix
 .DS_Store
-corpus/
+/corpus/
 .vscode-test/

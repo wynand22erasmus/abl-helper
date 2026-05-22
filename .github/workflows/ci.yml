@@ -20,7 +20,6 @@ jobs:
           node-version: "20"
           cache: npm
       - run: npm ci
-      - run: npm rebuild tree-sitter-abl || true
       - run: npm run build
       - run: npm run typecheck
       - run: npm run check:typescript-only
@@ -42,6 +41,5 @@ jobs:
           ref: ${{ env.ADE_PIN }}
           path: corpus/ade
       - run: npm ci
-      - run: npm rebuild tree-sitter-abl || true
       - run: npm run compile
       - run: npm run test:corpus

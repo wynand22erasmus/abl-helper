@@ -1,6 +1,6 @@
 /**
  * Bundle extension entry to CommonJS for Node (VS Code extension host).
- * tree-sitter native modules and vscode are external; WASM is loaded at runtime from wasm/.
+ * web-tree-sitter is bundled; runtime loads tree-sitter + ABL grammar from wasm/ (copied to out/wasm/).
  */
 import * as fs from "node:fs";
 import * as path from "node:path";
@@ -9,6 +9,7 @@ import * as esbuild from "esbuild";
 const watch = process.argv.includes("--watch");
 
 const RESOURCE_FILES = ["check-syntax.p", "abl-keywords.txt"];
+const WASM_FILES = ["tree-sitter.wasm", "tree-sitter-abl.wasm"];
 
 async function copyAssets() {
   const resOut = path.join(process.cwd(), "out", "resources");
@@ -19,9 +20,21 @@ async function copyAssets() {
       fs.copyFileSync(src, path.join(resOut, f));
     }
   }
+
+  const wasmSrc = path.join(process.cwd(), "wasm");
+  const wasmOut = path.join(process.cwd(), "out", "wasm");
+  if (fs.existsSync(wasmSrc)) {
+    fs.mkdirSync(wasmOut, { recursive: true });
+    for (const f of WASM_FILES) {
+      const src = path.join(wasmSrc, f);
+      if (fs.existsSync(src)) {
+        fs.copyFileSync(src, path.join(wasmOut, f));
+      }
+    }
+  }
 }
 
-/** Copy resources/ into out/resources/ after every esbuild rebuild (including watch). */
+/** Copy resources/ and wasm/ into out/ after every esbuild rebuild (including watch). */
 const copyAssetsPlugin = {
   name: "copy-abl-assets",
   setup(build: esbuild.PluginBuild) {
@@ -41,15 +54,14 @@ const ctx = await esbuild.context({
   target: "node18",
   format: "cjs",
   sourcemap: true,
-  // vscode: provided by host; tree-sitter*: optional native path, not bundled
-  external: ["vscode", "tree-sitter", "tree-sitter-abl"],
+  external: ["vscode"],
   logLevel: "info",
   plugins: [copyAssetsPlugin],
 });
 
 if (watch) {
   await ctx.watch();
-  console.log("[esbuild] watching src/extension.ts (assets → out/resources/ on each rebuild)");
+  console.log("[esbuild] watching src/extension.ts (assets → out/resources/, wasm → out/wasm/)");
 } else {
   await ctx.rebuild();
   await ctx.dispose();

@@ -1,11 +1,11 @@
 /**
  * VS Code extension entry: registers ABL language providers and commands.
- * Parser (native tree-sitter or WASM fallback) is created lazily on first use.
+ * Parser uses bundled web-tree-sitter + WASM (warmed on activate).
  */
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as vscode from "vscode";
-import { createAblParser, resetWasmParserInitForTests, type AblParserHandle } from "./ablParser";
+import { createAblParser, resetWasmParserInitForTests, warmAblParser, type AblParserHandle } from "./ablParser";
 import { extractDocumentSymbols } from "./symbols";
 import { runCheckSyntax, type CheckSyntaxOptions } from "./checkSyntax";
 import { buildCompletionList } from "./completion";
@@ -131,6 +131,14 @@ function debouncedDocumentSymbols(
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
   const log = (s: string) => getOutput().appendLine(s);
   log("ABL Helper activated.");
+
+  try {
+    const warmed = await warmAblParser(context.extensionPath);
+    log(`ABL parser (WASM): ${warmed.mode}`);
+    parserHandle = warmed;
+  } catch (e) {
+    log(`ABL parser warm-up failed: ${e instanceof Error ? e.message : String(e)}`);
+  }
 
   diagCollection = vscode.languages.createDiagnosticCollection("ablHelper");
   context.subscriptions.push(diagCollection);

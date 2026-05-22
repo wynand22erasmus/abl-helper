@@ -26,7 +26,7 @@ describe("symbols", () => {
   it("extracts procedure and class symbols from tree-sitter", async () => {
     const parser = await createAblParser(root);
     if (parser.mode === "none") {
-      throw new Error("Parser unavailable (install wasm under wasm/ or native tree-sitter-abl)");
+      throw new Error("Parser unavailable (run npm run fetch:wasm for wasm/ assets)");
     }
     const tree = parser.parse(OUTLINE_SAMPLE);
     const doc = TextDocument.create(Uri.file(path.join(root, "sample.p")), OUTLINE_SAMPLE);
