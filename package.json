@@ -196,7 +196,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:corpus": "vitest run src/test/corpus.test.ts",
-    "fetch:wasm": "tsx scripts/fetch-wasm.ts",
+    "fetch:parser-wasm": "tsx scripts/fetch-parser-wasm.ts",
     "corpus:sync": "tsx scripts/sync-ade-corpus.ts",
     "grammar:build": "tsx scripts/build-syntax-from-research.ts",
     "package": "npm run build && vsce package --no-dependencies --out abl-helper-dev.vsix"

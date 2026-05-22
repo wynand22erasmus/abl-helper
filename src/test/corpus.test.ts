@@ -1,5 +1,4 @@
 import { describe, expect, it, beforeAll, afterAll } from "vitest";
-import * as path from "node:path";
 import * as fs from "node:fs";
 import { buildAdeInventory, resolveAdeRoot } from "../corpus/inventory";
 import { createAblParser, resetWasmParserInitForTests } from "../ablParser";
@@ -31,7 +30,6 @@ function corpusSampleSize(): number {
 }
 
 describe("ADE corpus smoke", () => {
-  const root = path.resolve(__dirname, "..", "..");
   const adeRootConfig = process.env.ABL_CORPUS_ADE_ROOT?.trim() ?? "";
   const ade = resolveAdeRoot(adeRootConfig);
 
@@ -50,7 +48,7 @@ describe("ADE corpus smoke", () => {
     }
     const files = buildAdeInventory(ade, corpusMaxFileBytes(), corpusSampleSize());
     expect(files.length).toBeGreaterThan(0);
-    const parser = await createAblParser(root);
+    const parser = await createAblParser();
     if (parser.mode === "none") {
       throw new Error("Parser required for corpus tests");
     }

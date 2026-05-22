@@ -4,7 +4,7 @@
 
 ### Changed
 
-- **Parser** — WASM-only path: `web-tree-sitter` bundled in the extension; `tree-sitter.wasm` and `tree-sitter-abl.wasm` loaded from `wasm/` (copied to `out/wasm/` on build); parser warmed on activate. Native `tree-sitter` / `tree-sitter-abl` Node bindings removed from runtime dependencies.
+- **Parser** — WASM-only path: `web-tree-sitter` bundled in the extension; parser bytes in `src/assets/` (copied to `out/assets/` on build); duplicate `wasm/` tree and native bindings removed. Parser warmed on activate.
 - **Document outline** — Comprehensive symbol tree: variables, properties, parameters, events, DEFINE types, includes, USING, ON triggers, enum members, labeled blocks; name selection ranges and details; symbols retained when subtrees have parse errors.
 - **Credits** — README **Credits** section lists parsing, highlighting, and test-only third-party sources.
 - **ADE corpus tests** — Added `src/corpus/inventory.ts` for deterministic ADE file sampling.

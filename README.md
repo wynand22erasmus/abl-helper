@@ -17,7 +17,7 @@ OpenEdge ABL language support for Visual Studio Code: **syntax highlighting**, *
 
 - **VS Code** 1.85+
 - **Check syntax only**: OpenEdge 11.7+ with `_progres` on `PATH` via `DLC` (developer license). Set `ablHelper.dlcPath` or the `DLC` environment variable.
-- **Outline / parsing**: No OpenEdge required. Parsing uses bundled `web-tree-sitter` with `wasm/tree-sitter.wasm` and `wasm/tree-sitter-abl.wasm` (included in the repo; refresh with `npm run fetch:wasm`).
+- **Outline / parsing**: No OpenEdge required. Parsing uses bundled `web-tree-sitter` with WASM under `src/assets/` (shipped as `out/assets/`; refresh with `npm run fetch:parser-wasm`).
 
 ## Settings
 
@@ -199,7 +199,7 @@ A committed **`abl-helper-dev.vsix`** is kept in the repository so you can insta
 
 **Install the VSIX:** Extensions → `...` → **Install from VSIX...** → select `abl-helper-dev.vsix` (from the repo or from `npm run package`).
 
-Parsing is **WASM-only** (`web-tree-sitter` bundled in `out/extension.js`; grammar binaries under `wasm/`). The extension warms the parser on activate so outline and completion avoid a cold start.
+Parsing is **WASM-only** (`web-tree-sitter` bundled in `out/extension.js`; grammar binaries in `out/assets/`). The extension warms the parser on activate so outline and completion avoid a cold start.
 
 ## Development
 
@@ -236,9 +236,9 @@ Third-party components used by ABL Helper. Full license texts are in [LICENSE](L
 
 | Component | Source | License |
 |-----------|--------|---------|
-| [tree-sitter](https://github.com/tree-sitter/tree-sitter) runtime WASM | [tree-sitter v0.24.7 release](https://github.com/tree-sitter/tree-sitter/releases/tag/v0.24.7) (`tree-sitter.wasm`) | MIT |
+| [tree-sitter](https://github.com/tree-sitter/tree-sitter) runtime WASM | [tree-sitter v0.24.7 release](https://github.com/tree-sitter/tree-sitter/releases/tag/v0.24.7) (`src/assets/tree-sitter.wasm`) | MIT |
 | [web-tree-sitter](https://github.com/tree-sitter/tree-sitter/tree/master/lib/binding_web) | npm `web-tree-sitter@0.24.7` (bundled into the extension) | MIT |
-| [tree-sitter-abl](https://github.com/eglekaz/tree-sitter-abl) grammar WASM | npm `tree-sitter-abl@0.1.2` (`tree-sitter-abl.wasm` via `npm run fetch:wasm`) | MIT |
+| [tree-sitter-abl](https://github.com/eglekaz/tree-sitter-abl) grammar WASM | npm `tree-sitter-abl@0.1.2` (`src/assets/tree-sitter-abl.wasm`, via `npm run fetch:parser-wasm`) | MIT |
 
 ### Syntax highlighting (TextMate)
 

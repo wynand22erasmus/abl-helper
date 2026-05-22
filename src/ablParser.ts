@@ -1,104 +1,75 @@
 /**
- * Tree-sitter ABL parser via bundled web-tree-sitter + committed WASM under wasm/.
- * Outline, completion, and Tier B formatting all use this path (no native node bindings).
+ * Tree-sitter ABL parser: bundled web-tree-sitter + extension-shipped WASM bytes.
  */
-import * as fs from "node:fs";
-import * as path from "node:path";
 import Parser from "web-tree-sitter";
+import { getParserWasmBytes } from "./parserWasm";
 
 export type AblParserMode = "wasm" | "none";
 
-/** Active parser instance; callers must delete() trees; call dispose() to reset WASM runtime. */
 export interface AblParserHandle {
   mode: AblParserMode;
   parse(source: string): Parser.Tree;
   dispose(): void;
 }
 
-let initPromise: Promise<void> | undefined;
-let parser: Parser | undefined;
+let initPromise: Promise<Parser> | undefined;
+let activeParser: Parser | undefined;
 
-/** Locate bundled tree-sitter.wasm and tree-sitter-abl.wasm (repo root or out/wasm after build). */
-export function resolveWasmDir(extensionRoot: string): string | undefined {
-  for (const dir of [path.join(extensionRoot, "wasm"), path.join(extensionRoot, "out", "wasm")]) {
-    const core = path.join(dir, "tree-sitter.wasm");
-    const lang = path.join(dir, "tree-sitter-abl.wasm");
-    if (fs.existsSync(core) && fs.existsSync(lang)) {
-      return dir;
-    }
+async function getParser(): Promise<Parser> {
+  if (activeParser) {
+    return activeParser;
   }
-  return undefined;
-}
-
-async function initWasmParser(wasmDir: string): Promise<void> {
-  if (parser) {
-    return;
-  }
-  const coreWasm = path.join(wasmDir, "tree-sitter.wasm");
   if (!initPromise) {
-    initPromise = Parser.init({
-      locateFile: () => coreWasm,
-    });
+    initPromise = (async () => {
+      const { core, abl } = getParserWasmBytes();
+      await Parser.init({ wasmBinary: core });
+      const language = await Parser.Language.load(abl);
+      const p = new Parser();
+      p.setLanguage(language);
+      activeParser = p;
+      return p;
+    })();
   }
-  await initPromise;
-  const language = await Parser.Language.load(path.join(wasmDir, "tree-sitter-abl.wasm"));
-  const p = new Parser();
-  p.setLanguage(language);
-  parser = p;
+  return initPromise;
 }
 
-function noneHandle(): AblParserHandle {
-  return {
-    mode: "none",
-    parse() {
-      throw new Error("ABL Helper: WASM parser files missing (run npm run fetch:wasm).");
-    },
-    dispose() {
-      /* noop */
-    },
-  };
-}
-
-function wasmHandle(): AblParserHandle {
-  return {
-    mode: "wasm",
-    parse(source: string) {
-      return parser!.parse(source);
-    },
-    dispose() {
-      try {
-        parser?.delete();
-      } catch {
-        /* ignore */
-      }
-      parser = undefined;
-      initPromise = undefined;
-    },
-  };
-}
-
-/** Create or return the shared WASM parser for this extension host. */
-export async function createAblParser(extensionRoot: string): Promise<AblParserHandle> {
-  const wasmDir = resolveWasmDir(extensionRoot);
-  if (!wasmDir) {
-    return noneHandle();
-  }
-  await initWasmParser(wasmDir);
-  return wasmHandle();
-}
-
-/** Eagerly load WASM so first outline/completion avoids cold-start latency. */
-export async function warmAblParser(extensionRoot: string): Promise<AblParserHandle> {
-  return createAblParser(extensionRoot);
-}
-
-/** Clear WASM init so tests or "Reload parser" can re-bind paths. */
-export function resetWasmParserInitForTests(): void {
+function resetParserState(): void {
   try {
-    parser?.delete();
+    activeParser?.delete();
   } catch {
     /* ignore */
   }
-  parser = undefined;
+  activeParser = undefined;
   initPromise = undefined;
+}
+
+/** Shared WASM parser for outline, completion, and Tier B formatting. */
+export async function createAblParser(): Promise<AblParserHandle> {
+  try {
+    const p = await getParser();
+    return {
+      mode: "wasm",
+      parse(source: string) {
+        return p.parse(source);
+      },
+      dispose() {
+        resetParserState();
+      },
+    };
+  } catch {
+    return {
+      mode: "none",
+      parse() {
+        throw new Error("ABL Helper: parser WASM could not be loaded.");
+      },
+      dispose() {
+        /* noop */
+      },
+    };
+  }
+}
+
+/** Reset parser state for tests or Reload Tree-sitter Parser. */
+export function resetWasmParserInitForTests(): void {
+  resetParserState();
 }

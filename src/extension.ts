@@ -1,11 +1,11 @@
 /**
  * VS Code extension entry: registers ABL language providers and commands.
- * Parser uses bundled web-tree-sitter + WASM (warmed on activate).
+ * Parser uses bundled web-tree-sitter + extension assets (warmed on activate).
  */
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as vscode from "vscode";
-import { createAblParser, resetWasmParserInitForTests, warmAblParser, type AblParserHandle } from "./ablParser";
+import { createAblParser, resetWasmParserInitForTests, type AblParserHandle } from "./ablParser";
 import { extractDocumentSymbols } from "./symbols";
 import { runCheckSyntax, type CheckSyntaxOptions } from "./checkSyntax";
 import { buildCompletionList } from "./completion";
@@ -66,9 +66,9 @@ function runnerScriptPath(context: vscode.ExtensionContext): string {
   return path.join(context.extensionPath, "resources", "check-syntax.p");
 }
 
-async function ensureParser(context: vscode.ExtensionContext): Promise<AblParserHandle> {
+async function ensureParser(): Promise<AblParserHandle> {
   if (!parserHandle) {
-    parserHandle = await createAblParser(context.extensionPath);
+    parserHandle = await createAblParser();
     getOutput().appendLine(`ABL parser: ${parserHandle.mode}`);
   }
   return parserHandle;
@@ -78,12 +78,12 @@ async function computeDocumentSymbols(
   context: vscode.ExtensionContext,
   doc: vscode.TextDocument,
 ): Promise<vscode.DocumentSymbol[]> {
-  const handle = await ensureParser(context);
+  const handle = await ensureParser();
   if (handle.mode === "none") {
     if (!warnedOutlineParserNone) {
       warnedOutlineParserNone = true;
       void vscode.window.showWarningMessage(
-        "ABL Helper: Outline unavailable (tree-sitter parser missing — run npm run fetch:wasm).",
+        "ABL Helper: Outline unavailable (tree-sitter parser could not be loaded).",
       );
     }
     return [];
@@ -133,9 +133,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   log("ABL Helper activated.");
 
   try {
-    const warmed = await warmAblParser(context.extensionPath);
-    log(`ABL parser (WASM): ${warmed.mode}`);
-    parserHandle = warmed;
+    await ensureParser();
   } catch (e) {
     log(`ABL parser warm-up failed: ${e instanceof Error ? e.message : String(e)}`);
   }
@@ -158,10 +156,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
           parserHandle = undefined;
           warnedOutlineParserNone = false;
           warnedTierBSkipped = false;
-          const handle = await ensureParser(context);
+          const handle = await ensureParser();
           if (handle.mode === "none") {
             vscode.window.showWarningMessage(
-              "ABL Helper: Parser still unavailable (run npm run fetch:wasm in the extension folder).",
+              "ABL Helper: Parser still unavailable (rebuild the extension or run npm run fetch:parser-wasm).",
             );
           } else {
             vscode.window.showInformationMessage("ABL Helper: parser reloaded.");
@@ -274,7 +272,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
           if (doc.languageId !== "abl") {
             return [];
           }
-          const handle = await ensureParser(context);
+          const handle = await ensureParser();
           const root = await withParseTree(handle, doc.getText(), (r) => r);
           return buildCompletionList(doc, position, context.extensionPath, root ?? null);
         },
@@ -297,7 +295,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         }
         text = applyKeywordCase(text, kc, context.extensionPath);
         if (tierB) {
-          const handle = await ensureParser(context);
+          const handle = await ensureParser();
           const formatted = await withParseTree(handle, text, (root) => applyTierBFormatting(text, root));
           if (formatted !== undefined) {
             text = formatted;

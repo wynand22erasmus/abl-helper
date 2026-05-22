@@ -1,13 +1,12 @@
 #!/usr/bin/env node
 /**
- * Download tree-sitter runtime + ABL grammar WASM into wasm/ (for CI and Windows dev without native build).
- * Sources: tree-sitter v0.24.7 release assets; tree-sitter-abl@0.1.2 on unpkg.
+ * Download tree-sitter runtime + ABL grammar WASM into src/assets/ (shipped with the extension).
+ * Sources: tree-sitter v0.24.7 release; tree-sitter-abl@0.1.2 on unpkg.
  */
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as https from "node:https";
 
-/** Follow redirects; used for tree-sitter release assets and unpkg grammar WASM. */
 function download(url: string, dest: string): Promise<void> {
   return new Promise((resolve, reject) => {
     const file = fs.createWriteStream(dest);
@@ -46,13 +45,13 @@ function download(url: string, dest: string): Promise<void> {
 }
 
 const root = process.cwd();
-const wasmDir = path.join(root, "wasm");
-fs.mkdirSync(wasmDir, { recursive: true });
+const destDir = path.join(root, "src", "assets");
+fs.mkdirSync(destDir, { recursive: true });
 
 const coreUrl =
   "https://github.com/tree-sitter/tree-sitter/releases/download/v0.24.7/tree-sitter.wasm";
 const ablUrl = "https://unpkg.com/tree-sitter-abl@0.1.2/tree-sitter-abl.wasm";
 
-await download(coreUrl, path.join(wasmDir, "tree-sitter.wasm"));
-await download(ablUrl, path.join(wasmDir, "tree-sitter-abl.wasm"));
-console.log("Wrote wasm/ tree-sitter.wasm and tree-sitter-abl.wasm");
+await download(coreUrl, path.join(destDir, "tree-sitter.wasm"));
+await download(ablUrl, path.join(destDir, "tree-sitter-abl.wasm"));
+console.log("Wrote src/assets/ tree-sitter.wasm and tree-sitter-abl.wasm");
