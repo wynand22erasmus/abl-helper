@@ -265,10 +265,18 @@ export function runCheckSyntax(
       return { diagnostics: diags, status: "ok" };
     }
     const fallback = resolveCheckSyntaxStatus(true, res.status, 0);
-    return { diagnostics: [], status: fallback.status, errorMessage: fallback.errorMessage };
+    return {
+      diagnostics: [],
+      status: fallback.status,
+      ...(fallback.errorMessage !== undefined ? { errorMessage: fallback.errorMessage } : {}),
+    };
   }
 
   log("(no listing file produced — check DLC, PROPATH, and runner script)");
   const fallback = resolveCheckSyntaxStatus(false, res.status, 0);
-  return { diagnostics: [], status: fallback.status, errorMessage: fallback.errorMessage };
+  return {
+    diagnostics: [],
+    status: fallback.status,
+    ...(fallback.errorMessage !== undefined ? { errorMessage: fallback.errorMessage } : {}),
+  };
 }

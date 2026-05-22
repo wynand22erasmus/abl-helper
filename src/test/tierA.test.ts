@@ -5,7 +5,7 @@ import {
   applyTierBFormatting,
   trimTrailingWhitespace,
 } from "../formatters/tierA";
-import type { SyntaxNode } from "web-tree-sitter";
+import type { SyntaxNode } from "../parser/index";
 
 const root = path.join(__dirname, "..", "..");
 

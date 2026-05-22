@@ -2,10 +2,15 @@
 .vscode-test/**
 src/**
 out/**/*.map
+out/emit/**
+out/scripts/**
 .gitignore
 .github/**
 tsconfig.json
+tsconfig.build.json
 tsconfig.tools.json
+tsconfig.scripts.build.json
+tsconfig.parser-runtime.json
 eslint.config.ts
 esbuild.config.ts
 vitest.config.ts

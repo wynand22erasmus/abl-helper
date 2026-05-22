@@ -2,7 +2,7 @@
  * Shared parse-tree and editor helpers for extension providers.
  */
 import * as vscode from "vscode";
-import type { SyntaxNode } from "web-tree-sitter";
+import type { SyntaxNode } from "./parser/index";
 import type { AblParserHandle } from "./ablParser";
 
 export async function withParseTree<T>(

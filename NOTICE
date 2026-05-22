@@ -8,14 +8,14 @@ The file `syntaxes/abl.tmLanguage.json` is derived from [chriscamicas/abl-tmlang
 
 `resources/abl-keywords.txt` is derived from the same MIT-licensed chriscamicas/abl-tmlanguage project.
 
-## Parsing (WebAssembly)
+## Parsing (vendored in `parser/`)
 
-Outline, completion, and Tier B formatting use bundled [web-tree-sitter](https://github.com/tree-sitter/tree-sitter/tree/master/lib/binding_web) (npm `web-tree-sitter@0.24.7`, MIT License) with:
+Outline, completion, and Tier B formatting use a **local copy** of the tree-sitter web runtime and ABL grammar (MIT), not the `web-tree-sitter` or `tree-sitter-abl` npm packages at runtime:
 
-- `src/assets/tree-sitter.wasm` — [tree-sitter/tree-sitter](https://github.com/tree-sitter/tree-sitter) release **v0.24.7** (MIT License).
-- `src/assets/tree-sitter-abl.wasm` — [eglekaz/tree-sitter-abl](https://github.com/eglekaz/tree-sitter-abl) via npm `tree-sitter-abl@0.1.2` (MIT License).
+- `parser/runtime/` — [tree-sitter/tree-sitter](https://github.com/tree-sitter/tree-sitter) **v0.24.7** `lib/binding_web` + `tree-sitter.wasm`.
+- `parser/abl/` — [eglekaz/tree-sitter-abl](https://github.com/eglekaz/tree-sitter-abl) **0.1.2** (`grammar.js`, `src/scanner.c`, `tree-sitter-abl.wasm`).
 
-Run `npm run fetch:parser-wasm` to re-download these files if needed. The extension does not ship native `tree-sitter` Node bindings.
+`npm run build:parser` copies WASM into `src/assets/`. `npm run sync:parser-sources` refreshes vendored files from upstream pins.
 
 ## Grammar tests (dev only)
 

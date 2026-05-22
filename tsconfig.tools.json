@@ -5,6 +5,9 @@
     "target": "ES2022",
     "lib": ["ES2022"],
     "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitOverride": true,
     "allowJs": false,
     "esModuleInterop": true,
     "skipLibCheck": true,
@@ -17,7 +20,8 @@
     "esbuild.config.ts",
     "eslint.config.ts",
     "vitest.config.ts",
-    "scripts/**/*.ts"
+    "scripts/**/*.ts",
+    "scripts/build-parser-grammar.ts"
   ],
   "exclude": ["node_modules", "out", "src"]
 }

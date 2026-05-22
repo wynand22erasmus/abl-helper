@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "skipLibCheck": true,
+    "noEmit": false,
+    "outDir": "parser/runtime",
+    "rootDir": "parser/runtime",
+    "declaration": false,
+    "sourceMap": true
+  },
+  "include": ["parser/runtime/index.ts", "parser/runtime/tree-sitter.ts"],
+  "exclude": ["node_modules", "parser/runtime/tree-sitter.cjs"]
+}

@@ -13,7 +13,7 @@ Comprehensive inventory of what **ABL Helper** implements today, what is intenti
 | Pillar | What you get |
 |--------|----------------|
 | **Editor** | TextMate syntax (base + 12.8 research injection), language configuration, snippets |
-| **Structure** | Document outline via [tree-sitter-abl](https://github.com/eglekaz/tree-sitter-abl) (bundled WASM + web-tree-sitter) |
+| **Structure** | Document outline via vendored [parser/abl](parser/abl) grammar + [parser/runtime](parser/runtime) |
 | **Intelligence (local)** | Keyword + in-file symbol completion; no database schema yet |
 | **Format** | Tier A (safe): trim whitespace, keyword case; Tier B (experimental): minimal tree-sitter pass |
 | **OpenEdge** | Check syntax via `_progres -b -p` and a helper procedure → Problems panel |
@@ -56,7 +56,7 @@ Comprehensive inventory of what **ABL Helper** implements today, what is intenti
 ### 2.3 Document outline (symbols)
 
 - **Provider:** `DocumentSymbolProvider` in [`src/extension.ts`](../src/extension.ts)
-- **Parser:** tree-sitter-abl via [`src/ablParser.ts`](../src/ablParser.ts) — bundled **WASM** (`web-tree-sitter` + `src/assets/*.wasm` → `out/assets/`) → **none** (empty outline)
+- **Parser:** [`src/ablParser.ts`](../src/ablParser.ts) — vendored `parser/runtime` + `src/assets/*.wasm` → `out/assets/` → **none** (empty outline)
 - **Symbol kinds:** class, interface, procedure, function, method, constructor, destructor, enum (+ members), variables, properties, parameters, events, temp-table/buffer/dataset and other DEFINE types, includes, USING, ON triggers, labeled DO/REPEAT/FOR blocks ([`src/symbols.ts`](../src/symbols.ts))
 - **Setting:** `ablHelper.outline.debounceMs` (default 200) — reserved for future debouncing; outline re-parses on provider invocation
 - **Command:** **ABL Helper: Reload Tree-sitter Parser** — resets WASM parser after load issues
@@ -133,12 +133,12 @@ No default keybindings in `package.json`; users bind via Keyboard Shortcuts.
 | **Bundler** | esbuild → `out/extension.js`; assets in `out/resources/` |
 | **Root tooling** | [tsx](https://github.com/privatenumber/tsx) — `esbuild.config.ts`, `eslint.config.ts`, `scripts/*.ts` without separate compile |
 | **Grammar build** | `scripts/build-syntax-from-research.ts` |
-| **WASM fetch** | `npm run fetch:parser-wasm` |
+| **Parser build** | `npm run build:parser`; `npm run sync:parser-sources` to refresh vendored upstream |
 | **Package** | `npm run package` → **`abl-helper-dev.vsix`** at repo root (committed for quick install) |
 | **Unit tests** | Vitest: symbols, completion, check-syntax parser, grammar scopes |
 | **ADE corpus** | `npm run corpus:sync` → `corpus/ade`; `npm run test:corpus` — deterministic sample parse smoke (pinned ADE commit in CI) |
 | **CI** | `.github/workflows/ci.yml` — build, typecheck, lint, test; separate **corpus** job with `progress/ADE` checkout |
-| **Third-party** | web-tree-sitter, tree-sitter + tree-sitter-abl WASM; vscode-textmate + oniguruma for grammar tests (see README Credits) |
+| **Third-party** | Vendored tree-sitter runtime + ABL grammar under `parser/`; vscode-textmate + oniguruma for grammar tests (see README Credits) |
 
 **Corpus settings:** `ablHelper.corpus.adeRoot`, `maxFileBytes`, `sampleSize`.
 
@@ -243,7 +243,7 @@ From CABL research — choose one if deep analysis is required:
 |--------------|----------------------------|-------------------------|
 | **Syntax highlighting** | VS Code 1.85+ only | chriscamicas grammar; `grammar:build` script; research txt files |
 | **Language configuration** | VS Code only | `language-configuration.json` |
-| **Outline** | WASM in `src/assets/` (bundled `web-tree-sitter`, warmed on activate) | `web-tree-sitter`, tree-sitter + tree-sitter-abl WASM |
+| **Outline** | `parser/` sources; WASM in `out/assets/`; warmed on activate | Vendored tree-sitter v0.24.7 + tree-sitter-abl 0.1.2 |
 | **Autocomplete** | Same as outline (degrades to keywords-only if parser `none`) | `abl-keywords.txt`; `completion.ts` |
 | **Snippets** | VS Code only | `snippets/abl.code-snippets` |
 | **Tier A format** | VS Code only | `abl-keywords.txt` for case rules |

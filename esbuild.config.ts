@@ -1,6 +1,6 @@
 /**
- * Bundle extension entry to CommonJS for Node (VS Code extension host).
- * web-tree-sitter is bundled; parser WASM lives in out/assets/ (from src/assets/).
+ * Bundle extension entry to ESM for the VS Code extension host (package.json type: module).
+ * Vendored parser/runtime (tree-sitter.cjs + compiled tree-sitter.js) copied alongside; WASM in out/assets/.
  */
 import * as fs from "node:fs";
 import * as path from "node:path";
@@ -10,6 +10,7 @@ const watch = process.argv.includes("--watch");
 
 const RESOURCE_FILES = ["check-syntax.p", "abl-keywords.txt"];
 const PARSER_WASM_FILES = ["tree-sitter.wasm", "tree-sitter-abl.wasm"];
+const PARSER_RUNTIME_FILES = ["tree-sitter.cjs", "tree-sitter.js", "index.js"];
 
 async function copyAssets() {
   const resOut = path.join(process.cwd(), "out", "resources");
@@ -32,6 +33,18 @@ async function copyAssets() {
       }
     }
   }
+
+  const runtimeSrc = path.join(process.cwd(), "parser", "runtime");
+  const runtimeOut = path.join(process.cwd(), "out", "parser", "runtime");
+  if (fs.existsSync(runtimeSrc)) {
+    fs.mkdirSync(runtimeOut, { recursive: true });
+    for (const f of PARSER_RUNTIME_FILES) {
+      const src = path.join(runtimeSrc, f);
+      if (fs.existsSync(src)) {
+        fs.copyFileSync(src, path.join(runtimeOut, f));
+      }
+    }
+  }
 }
 
 const copyAssetsPlugin = {
@@ -51,7 +64,7 @@ const ctx = await esbuild.context({
   outfile: "out/extension.js",
   platform: "node",
   target: "node18",
-  format: "cjs",
+  format: "esm",
   sourcemap: true,
   external: ["vscode"],
   logLevel: "info",
@@ -60,7 +73,7 @@ const ctx = await esbuild.context({
 
 if (watch) {
   await ctx.watch();
-  console.log("[esbuild] watching src/extension.ts (assets → out/resources/, out/assets/)");
+  console.log("[esbuild] watching (assets → out/resources/, out/assets/, out/parser/runtime/)");
 } else {
   await ctx.rebuild();
   await ctx.dispose();

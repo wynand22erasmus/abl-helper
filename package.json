@@ -187,18 +187,27 @@
   },
   "scripts": {
     "vscode:prepublish": "npm run build",
-    "build": "npm run grammar:build && npm run compile",
-    "compile": "tsx esbuild.config.ts",
+    "build": "npm run grammar:build && npm run compile && npm run build:parser",
+    "compile": "npm run compile:grammar && npm run compile:extension && npm run compile:src && npm run compile:scripts && npm run compile:parser-runtime",
+    "compile:extension": "tsx esbuild.config.ts",
+    "compile:grammar": "tsx scripts/build-parser-grammar.ts",
+    "check:scanner": "tsx parser/abl/src/scanner.manifest.ts",
+    "compile:src": "tsc -p tsconfig.build.json",
+    "compile:scripts": "tsc -p tsconfig.scripts.build.json",
+    "compile:parser-runtime": "tsc -p tsconfig.parser-runtime.json",
     "watch": "tsx esbuild.config.ts --watch",
-    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.tools.json --noEmit",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.tools.json --noEmit && tsc -p tsconfig.grammar.json --noEmit",
     "lint": "eslint . && npm run check:typescript-only",
     "check:typescript-only": "tsx scripts/check-typescript-only.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:corpus": "vitest run src/test/corpus.test.ts",
-    "fetch:parser-wasm": "tsx scripts/fetch-parser-wasm.ts",
+    "build:parser": "tsx scripts/verify-parser-artifacts.ts && tsx scripts/build-parser-assets.ts",
+    "sync:parser-sources": "tsx scripts/sync-parser-sources.ts",
     "corpus:sync": "tsx scripts/sync-ade-corpus.ts",
     "grammar:build": "tsx scripts/build-syntax-from-research.ts",
+    "grammar:abl:build": "npm run compile:grammar",
+    "audit:languages": "tsx scripts/audit-languages.ts",
     "package": "npm run build && vsce package --no-dependencies --out abl-helper-dev.vsix"
   },
   "devDependencies": {
@@ -216,7 +225,5 @@
     "vscode-textmate": "^9.0.0",
     "vscode-oniguruma": "^2.0.0"
   },
-  "dependencies": {
-    "web-tree-sitter": "^0.24.7"
-  }
+  "dependencies": {}
 }

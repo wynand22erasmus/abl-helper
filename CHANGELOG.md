@@ -4,7 +4,9 @@
 
 ### Changed
 
-- **Parser** — WASM-only path: `web-tree-sitter` bundled in the extension; parser bytes in `src/assets/` (copied to `out/assets/` on build); duplicate `wasm/` tree and native bindings removed. Parser warmed on activate.
+- **TypeScript policy** — [docs/TYPESCRIPT.md](docs/TYPESCRIPT.md), `npm run audit:languages`, stricter `tsconfig` flags, tree-sitter types via `abl-helper-tree-sitter` path alias.
+- **ABL grammar** — Authored as `parser/abl/grammar.ts`; `npm run grammar:abl:build` emits `grammar.js` for tree-sitter CLI.
+- **Parser** — Vendored under `parser/` (editable `parser/abl/grammar.ts`, `parser/runtime/tree-sitter.cjs`); removed `web-tree-sitter` npm dependency. `npm run build:parser` / `sync:parser-sources` maintain assets. Parser warmed on activate.
 - **Document outline** — Comprehensive symbol tree: variables, properties, parameters, events, DEFINE types, includes, USING, ON triggers, enum members, labeled blocks; name selection ranges and details; symbols retained when subtrees have parse errors.
 - **Credits** — README **Credits** section lists parsing, highlighting, and test-only third-party sources.
 - **ADE corpus tests** — Added `src/corpus/inventory.ts` for deterministic ADE file sampling.

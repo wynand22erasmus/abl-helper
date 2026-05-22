@@ -3,7 +3,7 @@
  * with static keyword list; dedupes by label, symbols sort after keywords.
  */
 import * as vscode from "vscode";
-import type { SyntaxNode } from "web-tree-sitter";
+import type { SyntaxNode } from "./parser/index";
 import { keywordCompletionItems } from "./keywords";
 import { extractDocumentSymbols } from "./symbols";
 

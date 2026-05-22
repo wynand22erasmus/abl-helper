@@ -3,7 +3,7 @@
  * Maps declarations and labeled blocks to VS Code SymbolKind (aligned with TypeScript/Java outlines).
  */
 import * as vscode from "vscode";
-import type { SyntaxNode } from "web-tree-sitter";
+import type { SyntaxNode } from "./parser/index";
 
 /** Named declarations and triggers shown in the outline. */
 const SYMBOL_KINDS: Record<string, vscode.SymbolKind> = {
@@ -64,7 +64,7 @@ function childByField(node: SyntaxNode, field: string): SyntaxNode | null {
 }
 
 function firstNamedChild(node: SyntaxNode, ...types: string[]): SyntaxNode | undefined {
-  return node.namedChildren.find((c) => types.includes(c.type));
+  return node.namedChildren.find((c: SyntaxNode) => types.includes(c.type));
 }
 
 /** Resolve the narrowest node for selectionRange (identifier / name field). */

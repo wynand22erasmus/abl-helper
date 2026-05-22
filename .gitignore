@@ -4,4 +4,12 @@ out/
 !abl-helper-dev.vsix
 .DS_Store
 /corpus/
+.tmp-parser-sync/
+parser/runtime/index.js
+parser/runtime/index.js.map
+parser/runtime/tree-sitter.js
+parser/runtime/tree-sitter.js.map
+parser/abl/grammar.js
+parser/abl/src/scanner.host.js
+parser/abl/src/scanner.manifest.js
 .vscode-test/
