@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   CHECK_SYNTAX_DIAGNOSTIC_SOURCE,
   diagnosticsFromListing,
+  parseShellArgs,
   parseCompilerMessages,
   resolveCheckSyntaxStatus,
   validateCheckSyntaxPreconditions,
@@ -20,13 +21,37 @@ describe("parseCompilerMessages", () => {
   it("parses (line:col) variant", () => {
     const txt = `** Unknown keyword (12:5) **\n`;
     const m = parseCompilerMessages(txt);
-    expect(m).toEqual([{ line: 12, message: "Unknown keyword" }]);
+    expect(m).toHaveLength(1);
+    expect(m[0]).toMatchObject({ line: 12, column: 5, message: "Unknown keyword" });
   });
 
   it("parses Line N: message variant", () => {
     const txt = `Line 7: Something went wrong\n`;
     const m = parseCompilerMessages(txt);
-    expect(m).toEqual([{ line: 7, message: "Something went wrong" }]);
+    expect(m).toHaveLength(1);
+    expect(m[0]).toMatchObject({ line: 7, message: "Something went wrong" });
+  });
+
+  it("maps warning messages to warning diagnostics", () => {
+    const doc = TextDocument.create(Uri.file("x.p"), "DEFINE VARIABLE x AS INTEGER.\n");
+    const [diagnostic] = diagnosticsFromListing(doc as never, "** Warning: deprecated syntax (1:8) **\n");
+    expect((diagnostic as Diagnostic).severity).toBe(1);
+    expect((diagnostic as Diagnostic).range.start.character).toBe(7);
+  });
+});
+
+describe("parseShellArgs", () => {
+  it("keeps quoted values together and supports escapes", () => {
+    expect(parseShellArgs(`-param "path with spaces" 'single value' escaped\\ value`)).toEqual([
+      "-param",
+      "path with spaces",
+      "single value",
+      "escaped value",
+    ]);
+  });
+
+  it("rejects unclosed quotes", () => {
+    expect(() => parseShellArgs(`-param "unfinished`)).toThrow("Unterminated quote");
   });
 });
 

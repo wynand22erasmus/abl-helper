@@ -5,7 +5,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as os from "node:os";
-import { spawnSync, type SpawnSyncReturns } from "node:child_process";
+import { spawn, type SpawnOptionsWithoutStdio } from "node:child_process";
 import * as vscode from "vscode";
 
 export const CHECK_SYNTAX_DIAGNOSTIC_SOURCE = "ABL Helper";
@@ -73,11 +73,24 @@ function buildPfArgs(parameterFiles: string[], workspaceRoot: string): string[] 
   return args;
 }
 
-function makeDiagnostic(doc: vscode.TextDocument, line: number, message: string): vscode.Diagnostic {
+export interface CompilerMessage {
+  line: number;
+  column?: number;
+  message: string;
+  severity: vscode.DiagnosticSeverity;
+}
+
+function severityFromMessage(message: string): vscode.DiagnosticSeverity {
+  return /\bwarning\b/i.test(message) ? vscode.DiagnosticSeverity.Warning : vscode.DiagnosticSeverity.Error;
+}
+
+function makeDiagnostic(doc: vscode.TextDocument, message: CompilerMessage): vscode.Diagnostic {
+  const { line, column = 1, severity } = message;
   const idx = line - 1;
   const textLine = doc.lineAt(Math.min(Math.max(0, idx), doc.lineCount - 1));
-  const range = new vscode.Range(idx, 0, idx, textLine.text.length);
-  const diag = new vscode.Diagnostic(range, message, vscode.DiagnosticSeverity.Error);
+  const start = Math.min(Math.max(0, column - 1), textLine.text.length);
+  const range = new vscode.Range(idx, start, idx, Math.min(start + 1, textLine.text.length));
+  const diag = new vscode.Diagnostic(range, message.message, severity);
   diag.source = CHECK_SYNTAX_DIAGNOSTIC_SOURCE;
   return diag;
 }
@@ -86,25 +99,38 @@ function makeDiagnostic(doc: vscode.TextDocument, line: number, message: string)
  * Parse Progress compiler / listing lines into line + message pairs.
  * Supports `** Line N ** msg`, `** msg (N:col) **`, and `Line N: msg` variants.
  */
-export function parseCompilerMessages(content: string): { line: number; message: string }[] {
-  const out: { line: number; message: string }[] = [];
+export function parseCompilerMessages(content: string): CompilerMessage[] {
+  const out: CompilerMessage[] = [];
   for (const rawLine of content.split(/\r?\n/)) {
     const line = rawLine.trimEnd();
     // Classic batch listing: ** Line 42 ** Unknown keyword ...
     let m = line.match(/\*\*\s+Line\s+(\d+)\s+\*\*\s*(.+)/i);
     if (m) {
-      out.push({ line: Math.max(1, parseInt(m[1]!, 10)), message: m[2]!.trim() });
+      const message = m[2]!.trim();
+      out.push({ line: Math.max(1, parseInt(m[1]!, 10)), message, severity: severityFromMessage(message) });
       continue;
     }
     // Alternate: ** message (42:1) **
-    m = line.match(/\*\*\s+(.+?)\s+\((\d+)\s*:\s*\d+\s*\)\s*\*\*/i);
+    m = line.match(/\*\*\s+(.+?)\s+\((\d+)\s*:\s*(\d+)\s*\)\s*\*\*/i);
     if (m) {
-      out.push({ line: Math.max(1, parseInt(m[2]!, 10)), message: m[1]!.trim() });
+      const message = m[1]!.trim();
+      out.push({
+        line: Math.max(1, parseInt(m[2]!, 10)),
+        column: Math.max(1, parseInt(m[3]!, 10)),
+        message,
+        severity: severityFromMessage(message),
+      });
       continue;
     }
-    m = line.match(/Line\s+(\d+)\s*[:-]\s*(.+)/i);
+    m = line.match(/Line\s+(\d+)(?:\s*:\s*(\d+))?\s*[:-]\s*(.+)/i);
     if (m) {
-      out.push({ line: Math.max(1, parseInt(m[1]!, 10)), message: m[2]!.trim() });
+      const message = m[3]!.trim();
+      out.push({
+        line: Math.max(1, parseInt(m[1]!, 10)),
+        ...(m[2] ? { column: Math.max(1, parseInt(m[2], 10)) } : {}),
+        message,
+        severity: severityFromMessage(message),
+      });
     }
   }
   return out;
@@ -116,8 +142,8 @@ export function diagnosticsFromListing(
   listingText: string,
 ): vscode.Diagnostic[] {
   const diags: vscode.Diagnostic[] = [];
-  for (const { line, message } of parseCompilerMessages(listingText)) {
-    diags.push(makeDiagnostic(doc, line, message));
+  for (const message of parseCompilerMessages(listingText)) {
+    diags.push(makeDiagnostic(doc, message));
   }
   return diags;
 }
@@ -186,7 +212,7 @@ function formatListingForLog(txt: string, verbose: boolean): string {
 
 export interface CheckSyntaxRunDeps {
   existsSync?: (p: string) => boolean;
-  spawnSync?: typeof spawnSync;
+  spawn?: typeof spawn;
   readFileSync?: typeof fs.readFileSync;
   unlinkSync?: typeof fs.unlinkSync;
 }
@@ -194,15 +220,50 @@ export interface CheckSyntaxRunDeps {
 /**
  * Run check-syntax.p against the active document; returns diagnostics and run status.
  */
-export function runCheckSyntax(
+export function parseShellArgs(input: string): string[] {
+  const args: string[] = [];
+  let current = "";
+  let quote: "'" | "\"" | undefined;
+  let escaped = false;
+
+  for (const char of input.trim()) {
+    if (escaped) {
+      current += char;
+      escaped = false;
+    } else if (char === "\\") {
+      escaped = true;
+    } else if (quote) {
+      if (char === quote) {
+        quote = undefined;
+      } else {
+        current += char;
+      }
+    } else if (char === "'" || char === "\"") {
+      quote = char;
+    } else if (/\s/.test(char)) {
+      if (current) {
+        args.push(current);
+        current = "";
+      }
+    } else {
+      current += char;
+    }
+  }
+  if (escaped) current += "\\";
+  if (quote) throw new Error("Unterminated quote in ablHelper.checkSyntaxExtraArgs.");
+  if (current) args.push(current);
+  return args;
+}
+
+export async function runCheckSyntax(
   doc: vscode.TextDocument,
   opts: CheckSyntaxOptions,
   runnerPath: string,
   log: (s: string) => void,
   deps: CheckSyntaxRunDeps = {},
-): CheckSyntaxResult {
+): Promise<CheckSyntaxResult> {
   const existsSync = deps.existsSync ?? fs.existsSync;
-  const spawn = deps.spawnSync ?? spawnSync;
+  const spawnProcess = deps.spawn ?? spawn;
   const readFileSync = deps.readFileSync ?? fs.readFileSync;
   const unlinkSync = deps.unlinkSync ?? fs.unlinkSync;
 
@@ -229,26 +290,36 @@ export function runCheckSyntax(
   };
   const args = ["-b", ...buildPfArgs(opts.parameterFiles, workspaceRoot), "-p", runnerPath];
   if (opts.extraArgs.trim()) {
-    args.push(...opts.extraArgs.trim().split(/\s+/).filter(Boolean));
+    args.push(...parseShellArgs(opts.extraArgs));
   }
   log(`> "${exe}" ${args.map((a) => (/\s/.test(a) ? `"${a}"` : a)).join(" ")}`);
   log(`cwd: ${cwd}`);
-  const res: SpawnSyncReturns<string> = spawn(exe, args, {
-    encoding: "utf8",
+  const spawnOptions: SpawnOptionsWithoutStdio = {
     env,
     cwd,
+  };
+  let child;
+  try {
+    child = spawnProcess(exe, args, spawnOptions);
+  } catch (error) {
+    const spawnError = error instanceof Error ? error : new Error(String(error));
+    log(spawnError.message);
+    return resolveCheckSyntaxStatus(false, null, 0, spawnError);
+  }
+  let stdout = "";
+  let stderr = "";
+  child.stdout?.on("data", (chunk: Buffer | string) => { stdout += chunk.toString(); });
+  child.stderr?.on("data", (chunk: Buffer | string) => { stderr += chunk.toString(); });
+  const outcome = await new Promise<{ exitStatus: number | null; error?: Error }>((resolve) => {
+    child.once("error", (error) => resolve({ exitStatus: null, error }));
+    child.once("close", (code) => resolve({ exitStatus: code }));
   });
-  if (res.stdout) {
-    log(res.stdout);
-  }
-  if (res.stderr) {
-    log(res.stderr);
-  }
-  log(`exit: ${res.status ?? "null"}`);
-
-  if (res.error) {
-    log(res.error.message);
-    return resolveCheckSyntaxStatus(false, res.status, 0, res.error);
+  if (stdout) log(stdout);
+  if (stderr) log(stderr);
+  log(`exit: ${outcome.exitStatus ?? "null"}`);
+  if (outcome.error) {
+    log(outcome.error.message);
+    return resolveCheckSyntaxStatus(false, outcome.exitStatus, 0, outcome.error);
   }
 
   const verboseListing = opts.verboseListing ?? false;
@@ -264,7 +335,7 @@ export function runCheckSyntax(
     if (diags.length > 0) {
       return { diagnostics: diags, status: "ok" };
     }
-    const fallback = resolveCheckSyntaxStatus(true, res.status, 0);
+    const fallback = resolveCheckSyntaxStatus(true, outcome.exitStatus, 0);
     return {
       diagnostics: [],
       status: fallback.status,
@@ -273,7 +344,7 @@ export function runCheckSyntax(
   }
 
   log("(no listing file produced — check DLC, PROPATH, and runner script)");
-  const fallback = resolveCheckSyntaxStatus(false, res.status, 0);
+  const fallback = resolveCheckSyntaxStatus(false, outcome.exitStatus, 0);
   return {
     diagnostics: [],
     status: fallback.status,

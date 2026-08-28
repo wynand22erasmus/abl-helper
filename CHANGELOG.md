@@ -4,6 +4,8 @@
 
 ### Changed
 
+- **Tooling** — Updated all development dependencies to their current compatible releases; TypeScript is pinned at 6.0.x because the current `typescript-eslint` release does not yet support TypeScript 7. `npm audit` now reports no known vulnerabilities.
+- **Check syntax** — OpenEdge processes now run asynchronously so syntax checks do not block the VS Code extension host. Extra arguments support quoted values, and compiler locations/severity are mapped into diagnostics when the listing provides them.
 - **TypeScript policy** — [docs/TYPESCRIPT.md](docs/TYPESCRIPT.md), `npm run audit:languages`, stricter `tsconfig` flags, tree-sitter types via `abl-helper-tree-sitter` path alias.
 - **ABL grammar** — Authored as `parser/abl/grammar.ts`; `npm run grammar:abl:build` emits `grammar.js` for tree-sitter CLI.
 - **Parser** — Vendored under `parser/` (editable `parser/abl/grammar.ts`, `parser/runtime/tree-sitter.cjs`); removed `web-tree-sitter` npm dependency. `npm run build:parser` / `sync:parser-sources` maintain assets. Parser warmed on activate.

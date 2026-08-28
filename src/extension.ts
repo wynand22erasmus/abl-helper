@@ -184,7 +184,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         try {
           const opts = readCheckOptions();
           const runner = runnerScriptPath(context);
-          const result = runCheckSyntax(doc, opts, runner, log);
+          const result = await runCheckSyntax(doc, opts, runner, log);
           diagCollection!.set(doc.uri, result.diagnostics);
           if (result.status === "ok" && result.diagnostics.length === 0) {
             vscode.window.showInformationMessage("ABL Helper: Check syntax — no issues reported.");

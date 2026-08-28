@@ -122,7 +122,7 @@
         "ablHelper.checkSyntaxExtraArgs": {
           "type": "string",
           "default": "",
-          "description": "Extra arguments appended to the check-syntax invocation (advanced; quoted paths with spaces are not parsed)."
+          "description": "Extra arguments appended to the check-syntax invocation (advanced; single- and double-quoted values are supported)."
         },
         "ablHelper.checkSyntax.verboseListing": {
           "type": "boolean",
@@ -211,19 +211,18 @@
     "package": "npm run build && vsce package --no-dependencies --out abl-helper-dev.vsix"
   },
   "devDependencies": {
-    "@eslint/js": "^9.15.0",
-    "@types/node": "^20.14.0",
-    "@types/vscode": "^1.85.0",
-    "@vscode/vsce": "^3.2.0",
-    "esbuild": "^0.24.0",
-    "eslint": "^9.15.0",
-    "jiti": "^2.4.2",
-    "typescript": "^5.6.3",
-    "tsx": "^4.19.2",
-    "typescript-eslint": "^8.14.0",
-    "vitest": "^2.1.5",
-    "vscode-textmate": "^9.0.0",
-    "vscode-oniguruma": "^2.0.0"
-  },
-  "dependencies": {}
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^26.4.0",
+    "@types/vscode": "^1.134.0",
+    "@vscode/vsce": "^3.9.2",
+    "esbuild": "^0.28.2",
+    "eslint": "^10.9.1",
+    "jiti": "^2.7.0",
+    "tsx": "^4.23.12",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.68.0",
+    "vitest": "^4.1.11",
+    "vscode-oniguruma": "^2.0.1",
+    "vscode-textmate": "^9.3.2"
+  }
 }
