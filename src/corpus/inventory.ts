@@ -49,7 +49,7 @@ function walkAblFiles(root: string, maxFileBytes: number, out: AdeInventoryEntry
       if (!ABL_EXTENSIONS.has(ext)) {
         continue;
       }
-      let size = 0;
+      let size: number;
       try {
         size = fs.statSync(abs).size;
       } catch {

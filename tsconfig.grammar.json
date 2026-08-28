@@ -5,6 +5,7 @@
     "noEmit": true,
     "skipLibCheck": true,
     "allowJs": false,
+    "types": ["node"],
     "noImplicitAny": false,
     "strict": false
   },
